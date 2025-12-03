@@ -1,7 +1,7 @@
 package realtime
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -13,13 +13,23 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func handleWS(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		fmt.Println(err)
+func (h *Hub) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("UserId")
+	roomID := r.Header.Get("RoomId")
+
+	if userID == "" || roomID == "" {
+		http.Error(w, "Missing required headers", http.StatusBadRequest)
 		return
 	}
-	defer conn.Close()
 
-	fmt.Println("New WebSocket connection established")
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println("New WebSocket connection established")
+
+	client := NewClient(userID, roomID, conn, h)
+
+	h.Register <- client
 }

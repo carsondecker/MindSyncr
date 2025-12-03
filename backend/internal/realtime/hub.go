@@ -8,7 +8,12 @@ type Hub struct {
 }
 
 func NewHub() *Hub {
-	return &Hub{}
+	return &Hub{
+		Register:   make(chan *Client),
+		Unregister: make(chan *Client),
+		Broadcast:  make(chan Event),
+		Clients:    make(map[string]*Client),
+	}
 }
 
 func (h *Hub) Run() {
@@ -16,16 +21,22 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.Register:
 			h.Clients[client.ID] = client
-		
+			go client.ReadPump()
+			go client.WritePump()
+
 		case client := <-h.Unregister:
 			delete(h.Clients, client.ID)
 
 		case event := <-h.Broadcast:
-			for 
-		} 
+			for _, client := range h.Clients {
+				if receivesEvent(client, event) {
+					client.SendChan <- event
+				}
+			}
+		}
 	}
 }
 
-func recievesEvent(c *Client, e Event) {
-
+func receivesEvent(c *Client, e Event) bool {
+	return c.RoomID == e.RoomID
 }

@@ -1,12 +1,16 @@
 package realtime
 
-import "github.com/gorilla/websocket"
+import (
+	"log"
+
+	"github.com/gorilla/websocket"
+)
 
 type Client struct {
 	ID       string
 	RoomID   string
 	Conn     *websocket.Conn
-	SendChan chan []byte
+	SendChan chan Event
 	Close    chan struct{}
 	Hub      *Hub
 }
@@ -16,7 +20,7 @@ func NewClient(id, roomId string, conn *websocket.Conn, hub *Hub) *Client {
 		ID:       id,
 		RoomID:   roomId,
 		Conn:     conn,
-		SendChan: make(chan []byte),
+		SendChan: make(chan Event),
 		Close:    make(chan struct{}),
 		Hub:      hub,
 	}
@@ -30,6 +34,7 @@ func (c *Client) close() {
 		close(c.Close)
 		c.Hub.Unregister <- c
 		c.Conn.Close()
+		log.Println("Websocket connection closed.")
 	}
 }
 
@@ -56,8 +61,8 @@ func (c *Client) WritePump() {
 		select {
 		case <-c.Close:
 			return
-		case <-c.SendChan:
-			c.Conn.WriteJSON()
+		case event := <-c.SendChan:
+			c.Conn.WriteJSON(event)
 		}
 	}
 }
