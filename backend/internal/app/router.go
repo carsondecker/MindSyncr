@@ -1,5 +1,5 @@
 package app
 
 func (a *App) registerRoutes() {
-	a.Router.HandleFunc("/ws", a.Hub.WebSocketHandler).Methods("GET")
+	a.Router.HandleFunc("GET /ws", a.Hub.WebSocketHandler)
 }

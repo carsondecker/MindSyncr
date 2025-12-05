@@ -29,7 +29,7 @@ func testEvents(app *app.App) {
 	defer ticker.Stop() // cleanup
 
 	for range ticker.C {
-		log.Println("Running every 2 seconds:", time.Now())
+		log.Println("Running every 2 seconds")
 
 		app.Hub.Broadcast <- realtime.Event{
 			RoomID: "1",
