@@ -1,4 +1,4 @@
-package app
+package config
 
 import (
 	"database/sql"
@@ -7,22 +7,20 @@ import (
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 )
 
-type App struct {
+type Config struct {
 	Router  *http.ServeMux
 	DB      *sql.DB
 	Queries *sqlc.Queries
 }
 
-func NewApp(db *sql.DB, queries *sqlc.Queries) *App {
+func NewConfig(db *sql.DB, queries *sqlc.Queries) *Config {
 	router := http.NewServeMux()
 
-	app := &App{
+	app := &Config{
 		Router:  router,
 		DB:      db,
 		Queries: queries,
 	}
-
-	app.registerRoutes()
 
 	return app
 }

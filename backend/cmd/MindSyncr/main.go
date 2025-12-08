@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/carsondecker/MindSyncr/internal/app"
+	"github.com/carsondecker/MindSyncr/internal/config"
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 )
 
@@ -19,10 +20,12 @@ func main() {
 
 	queries := sqlc.New(db)
 
-	app := app.NewApp(db, queries)
+	config := config.NewConfig(db, queries)
+
+	config.Router = app.GetRouter(config)
 
 	srv := &http.Server{
-		Handler:      app.Router,
+		Handler:      config.Router,
 		Addr:         "127.0.0.1:3000",
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
