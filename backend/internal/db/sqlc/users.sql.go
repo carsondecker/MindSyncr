@@ -7,40 +7,35 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
-const getUsers = `-- name: GetUsers :many
-SELECT id, email, password_hash, username, is_email_verified, status, created_at, updated_at FROM users
+const insertUser = `-- name: InsertUser :one
+INSERT INTO users (email, username, password_hash)
+VALUES (
+    $1,
+    $2,
+    $3
+)
+RETURNING id, email, username
 `
 
-func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, getUsers)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []User
-	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.Email,
-			&i.PasswordHash,
-			&i.Username,
-			&i.IsEmailVerified,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+type InsertUserParams struct {
+	Email        string `json:"email"`
+	Username     string `json:"username"`
+	PasswordHash string `json:"password_hash"`
+}
+
+type InsertUserRow struct {
+	ID       uuid.UUID `json:"id"`
+	Email    string    `json:"email"`
+	Username string    `json:"username"`
+}
+
+func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (InsertUserRow, error) {
+	row := q.db.QueryRowContext(ctx, insertUser, arg.Email, arg.Username, arg.PasswordHash)
+	var i InsertUserRow
+	err := row.Scan(&i.ID, &i.Email, &i.Username)
+	return i, err
 }

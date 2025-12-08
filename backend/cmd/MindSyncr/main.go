@@ -1,16 +1,25 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/carsondecker/MindSyncr/internal/app"
-	"github.com/carsondecker/MindSyncr/internal/realtime"
+	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 )
 
 func main() {
-	app := app.NewApp()
+	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	queries := sqlc.New(db)
+
+	app := app.NewApp(db, queries)
 
 	srv := &http.Server{
 		Handler:      app.Router,
@@ -19,21 +28,5 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	go testEvents(app)
-
 	log.Fatal(srv.ListenAndServe())
-}
-
-func testEvents(app *app.App) {
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop() // cleanup
-
-	for range ticker.C {
-		log.Println("Running every 2 seconds")
-
-		app.Hub.Broadcast <- realtime.Event{
-			RoomID: "1",
-			Msg:    "Hi! This message will repeat every 2 seconds.",
-		}
-	}
 }

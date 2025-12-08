@@ -1,28 +1,25 @@
 package app
 
 import (
+	"database/sql"
 	"net/http"
 
-	"github.com/carsondecker/MindSyncr/internal/config"
-	"github.com/carsondecker/MindSyncr/internal/realtime"
+	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 )
 
 type App struct {
-	Config *config.Config
-	Router *http.ServeMux
-	Hub    *realtime.Hub
+	Router  *http.ServeMux
+	DB      *sql.DB
+	Queries *sqlc.Queries
 }
 
-func NewApp() *App {
-	cfg := config.NewConfig("3000")
+func NewApp(db *sql.DB, queries *sqlc.Queries) *App {
 	router := http.NewServeMux()
-	hub := realtime.NewHub()
-	go hub.Run()
 
 	app := &App{
-		Config: cfg,
-		Router: router,
-		Hub:    hub,
+		Router:  router,
+		DB:      db,
+		Queries: queries,
 	}
 
 	app.registerRoutes()
