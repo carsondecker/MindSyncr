@@ -19,5 +19,5 @@ func GetRouter(cfg *config.Config) *http.ServeMux {
 
 	router.Handle("/auth/", http.StripPrefix("/auth", authRouter))
 
-	return router
+	return baseRouter
 }

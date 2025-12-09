@@ -7,12 +7,19 @@ import (
 	"os"
 	"time"
 
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+
 	"github.com/carsondecker/MindSyncr/internal/app"
 	"github.com/carsondecker/MindSyncr/internal/config"
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: Error loading .env file: %v", err)
+	}
+
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal(err)

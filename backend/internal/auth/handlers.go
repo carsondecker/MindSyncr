@@ -1,8 +1,9 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/carsondecker/MindSyncr/internal/config"
@@ -20,22 +21,30 @@ func NewAuthHandler(cfg *config.Config) *AuthHandler {
 }
 
 func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	log.Println("Hi")
 
 	var registerRequest sqlc.InsertUserParams
 	if err := json.NewDecoder(r.Body).Decode(&registerRequest); err != nil {
+		fmt.Printf("failed to decode data: %w\n", err)
 		w.WriteHeader(400)
 		return
 	}
 
-	newUser, err := h.cfg.Queries.InsertUser(ctx, registerRequest)
+	newUser, err := h.cfg.Queries.InsertUser(r.Context(), registerRequest)
 
 	if err != nil {
+		fmt.Printf("failed to insert user: %w\n", err)
 		w.WriteHeader(500)
 		return
 	}
 
 	res, err := json.Marshal(newUser)
+
+	if err != nil {
+		fmt.Printf("failed to marshal data: %w\n", err)
+		w.WriteHeader(500)
+		return
+	}
 
 	w.WriteHeader(201)
 	w.Write(res)
