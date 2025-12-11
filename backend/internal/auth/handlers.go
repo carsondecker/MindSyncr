@@ -3,11 +3,10 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/carsondecker/MindSyncr/internal/config"
-	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
+	"github.com/carsondecker/MindSyncr/internal/utils"
 )
 
 type AuthHandler struct {
@@ -21,31 +20,21 @@ func NewAuthHandler(cfg *config.Config) *AuthHandler {
 }
 
 func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
-	log.Println("Hi")
-
-	var registerRequest sqlc.InsertUserParams
+	var registerRequest RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&registerRequest); err != nil {
-		fmt.Printf("failed to decode data: %w\n", err)
-		w.WriteHeader(400)
+		utils.Error(w, 400, "BAD_REQUEST", fmt.Sprintf("failed to decode data: %s", err.Error()))
 		return
 	}
 
-	newUser, err := h.cfg.Queries.InsertUser(r.Context(), registerRequest)
-
+	err := h.cfg.Validator.Struct(registerRequest)
 	if err != nil {
-		fmt.Printf("failed to insert user: %w\n", err)
-		w.WriteHeader(500)
-		return
+		utils.Error(w, 422, "VALIDATION_FAIL", err.Error())
 	}
 
-	res, err := json.Marshal(newUser)
-
-	if err != nil {
-		fmt.Printf("failed to marshal data: %w\n", err)
-		w.WriteHeader(500)
-		return
+	row, sErr := h.registerService(r.Context(), registerRequest.Email, registerRequest.Username, registerRequest.Password)
+	if sErr != nil {
+		utils.SError(w, sErr)
 	}
 
-	w.WriteHeader(201)
-	w.Write(res)
+	utils.Success(w, 201, row)
 }
