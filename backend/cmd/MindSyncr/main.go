@@ -16,6 +16,9 @@ import (
 )
 
 func main() {
+	log.SetOutput(os.Stdout)
+	log.Println("Started MindSyncr Backend.")
+
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: Error loading .env file: %v", err)
 	}
@@ -33,7 +36,7 @@ func main() {
 
 	srv := &http.Server{
 		Handler:      config.Router,
-		Addr:         "127.0.0.1:3000",
+		Addr:         ":3000",
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}

@@ -29,12 +29,20 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	err := h.cfg.Validator.Struct(registerRequest)
 	if err != nil {
 		utils.Error(w, 422, "VALIDATION_FAIL", err.Error())
+		return
 	}
 
 	row, sErr := h.registerService(r.Context(), registerRequest.Email, registerRequest.Username, registerRequest.Password)
 	if sErr != nil {
 		utils.SError(w, sErr)
+		return
 	}
 
-	utils.Success(w, 201, row)
+	res := RegisterResponse{
+		Id:       row.ID,
+		Email:    row.Email,
+		Username: row.Username,
+	}
+
+	utils.Success(w, 201, res)
 }

@@ -21,7 +21,7 @@ func RegisterCustomValidations(v *validator.Validate) {
 func validatePassword(fl validator.FieldLevel) bool {
 	str := fl.Field().String()
 
-	if len(str) < 12 || len(str) > 400 {
+	if len(str) < 10 || len(str) > 400 {
 		return false
 	}
 
