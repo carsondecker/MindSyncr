@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var secret = []byte(os.Getenv("JWT_SECRET"))
+var secret []byte
 
 type Claims struct {
 	Id       uuid.UUID `json:"id"`
@@ -19,7 +19,15 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+func JWTInit() {
+	secret = []byte(os.Getenv("JWT_SECRET"))
+}
+
 func CreateJWT(id uuid.UUID, email, username string) (string, error) {
+	if secret == nil || len(secret) == 0 {
+		return "", fmt.Errorf("failed to get jwt secret key")
+	}
+
 	claims := Claims{
 		Id:       id,
 		Email:    email,
@@ -43,6 +51,10 @@ func CreateJWT(id uuid.UUID, email, username string) (string, error) {
 }
 
 func GetClaims(tokenString string) (*Claims, error) {
+	if secret == nil || len(secret) == 0 {
+		return nil, fmt.Errorf("failed to get jwt secret key")
+	}
+
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (any, error) {
 		return secret, nil
 	})
@@ -51,9 +63,14 @@ func GetClaims(tokenString string) (*Claims, error) {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*Claims); ok {
-		return claims, nil
+	claims, ok := token.Claims.(*Claims)
+	if !ok {
+		return nil, fmt.Errorf("could not parse jwt claims")
 	}
 
-	return nil, fmt.Errorf("could not parse jwt claims")
+	if claims.Id == uuid.Nil || claims.Email == "" || claims.Username == "" {
+		return nil, fmt.Errorf("invalid claims: missing required fields")
+	}
+
+	return claims, nil
 }

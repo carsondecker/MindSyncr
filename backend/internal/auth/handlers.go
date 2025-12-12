@@ -32,17 +32,21 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	row, sErr := h.registerService(r.Context(), registerRequest.Email, registerRequest.Username, registerRequest.Password)
+	res, jwtToken, sErr := h.registerService(r.Context(), registerRequest.Email, registerRequest.Username, registerRequest.Password)
 	if sErr != nil {
 		utils.SError(w, sErr)
 		return
 	}
 
-	res := RegisterResponse{
-		Id:       row.ID,
-		Email:    row.Email,
-		Username: row.Username,
-	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwtToken",
+		Value:    jwtToken,
+		Path:     "/",
+		MaxAge:   15 * 60,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
 
 	utils.Success(w, 201, res)
 }
