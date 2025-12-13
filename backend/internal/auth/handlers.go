@@ -139,3 +139,20 @@ func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 
 	utils.Success(w, 201, res)
 }
+
+func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
+	refreshTokenCookie, err := r.Cookie("refresh_token")
+	if err != nil || refreshTokenCookie.Value == "" {
+		utils.Error(w, 400, "BAD_REQUEST", "no refresh token cookie provided")
+		return
+	}
+	refreshToken := refreshTokenCookie.Value
+
+	sErr := h.logoutService(r.Context(), refreshToken)
+	if sErr != nil {
+		utils.SError(w, sErr)
+		return
+	}
+
+	utils.Success(w, 200, struct{}{})
+}

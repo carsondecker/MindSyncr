@@ -65,16 +65,9 @@ func isValidRefreshToken(ctx context.Context, q *sqlc.Queries, token string) (bo
 
 	userId, err := q.CheckValidRefreshToken(ctx, tokenHash)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, uuid.Nil, &utils.ServiceError{
-				StatusCode: 401,
-				Code:       "INVALID_REFRESH_TOKEN",
-				Message:    err.Error(),
-			}
-		}
 		return false, uuid.Nil, &utils.ServiceError{
 			StatusCode: 401,
-			Code:       "REFRESH_FAIL",
+			Code:       "INVALID_REFRESH_TOKEN",
 			Message:    err.Error(),
 		}
 	}
@@ -82,7 +75,7 @@ func isValidRefreshToken(ctx context.Context, q *sqlc.Queries, token string) (bo
 	if userId == uuid.Nil {
 		return false, uuid.Nil, &utils.ServiceError{
 			StatusCode: 401,
-			Code:       "REFRESH_FAIL",
+			Code:       "INVALID_REFRESH_TOKEN",
 			Message:    "could not get user id from refresh token entry",
 		}
 	}

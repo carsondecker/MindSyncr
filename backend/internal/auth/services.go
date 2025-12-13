@@ -140,7 +140,7 @@ func (h *AuthHandler) refreshService(ctx context.Context, token string) (string,
 	qtx := h.cfg.Queries.WithTx(tx)
 
 	isValid, userId, sErr := isValidRefreshToken(ctx, qtx, token)
-	if sErr != nil || !isValid {
+	if sErr != nil {
 		return "", "", RefreshTokenResponse{}, sErr
 	}
 
@@ -185,4 +185,30 @@ func (h *AuthHandler) refreshService(ctx context.Context, token string) (string,
 	}
 
 	return jwtToken, refreshToken, res, nil
+}
+
+func (h *AuthHandler) logoutService(ctx context.Context, token string) *utils.ServiceError {
+	isValid, userId, sErr := isValidRefreshToken(ctx, h.cfg.Queries, token)
+	if sErr != nil {
+		return sErr
+	}
+
+	if !isValid {
+		return &utils.ServiceError{
+			StatusCode: 401,
+			Code:       "INVALID_REFRESH_TOKEN",
+			Message:    "refresh token is invalid",
+		}
+	}
+
+	err := h.cfg.Queries.RevokeUserTokens(ctx, userId)
+	if err != nil {
+		return &utils.ServiceError{
+			StatusCode: 500,
+			Code:       "REFRESH_REVOKE_FAIL",
+			Message:    err.Error(),
+		}
+	}
+
+	return nil
 }
