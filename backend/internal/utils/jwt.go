@@ -24,7 +24,7 @@ func JWTInit() {
 }
 
 func CreateJWT(id uuid.UUID, email, username string) (string, error) {
-	if secret == nil || len(secret) == 0 {
+	if len(secret) == 0 {
 		return "", fmt.Errorf("failed to get jwt secret key")
 	}
 
@@ -51,7 +51,7 @@ func CreateJWT(id uuid.UUID, email, username string) (string, error) {
 }
 
 func GetClaims(tokenString string) (*Claims, error) {
-	if secret == nil || len(secret) == 0 {
+	if len(secret) == 0 {
 		return nil, fmt.Errorf("failed to get jwt secret key")
 	}
 

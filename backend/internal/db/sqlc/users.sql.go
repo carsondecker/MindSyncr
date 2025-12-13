@@ -7,6 +7,7 @@ package sqlc
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -43,7 +44,7 @@ VALUES (
     $2,
     $3
 )
-RETURNING id, email, username
+RETURNING id, email, username, created_at
 `
 
 type InsertUserParams struct {
@@ -53,14 +54,20 @@ type InsertUserParams struct {
 }
 
 type InsertUserRow struct {
-	ID       uuid.UUID `json:"id"`
-	Email    string    `json:"email"`
-	Username string    `json:"username"`
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (InsertUserRow, error) {
 	row := q.db.QueryRowContext(ctx, insertUser, arg.Email, arg.Username, arg.PasswordHash)
 	var i InsertUserRow
-	err := row.Scan(&i.ID, &i.Email, &i.Username)
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Username,
+		&i.CreatedAt,
+	)
 	return i, err
 }

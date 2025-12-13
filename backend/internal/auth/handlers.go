@@ -32,7 +32,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, jwtToken, sErr := h.registerService(r.Context(), registerRequest.Email, registerRequest.Username, registerRequest.Password)
+	res, jwtToken, refreshToken, sErr := h.registerService(r.Context(), registerRequest.Email, registerRequest.Username, registerRequest.Password)
 	if sErr != nil {
 		utils.SError(w, sErr)
 		return
@@ -43,6 +43,16 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		Value:    jwtToken,
 		Path:     "/",
 		MaxAge:   15 * 60,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refreshToken",
+		Value:    refreshToken,
+		Path:     "/",
+		MaxAge:   7 * 24 * 60,
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
@@ -64,7 +74,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, jwtToken, sErr := h.loginService(r.Context(), loginRequest.Email, loginRequest.Password)
+	res, jwtToken, refreshToken, sErr := h.loginService(r.Context(), loginRequest.Email, loginRequest.Password)
 	if sErr != nil {
 		utils.SError(w, sErr)
 		return
@@ -75,6 +85,16 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		Value:    jwtToken,
 		Path:     "/",
 		MaxAge:   15 * 60,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refreshToken",
+		Value:    refreshToken,
+		Path:     "/",
+		MaxAge:   7 * 24 * 60,
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,

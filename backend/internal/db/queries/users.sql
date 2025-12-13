@@ -5,7 +5,7 @@ VALUES (
     $2,
     $3
 )
-RETURNING id, email, username;
+RETURNING id, email, username, created_at;
 
 -- name: GetUserForLogin :one
 SELECT id, email, username, password_hash
