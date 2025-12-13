@@ -92,8 +92,8 @@ func Success[Data any](w http.ResponseWriter, statusCode int, data Data) {
 	}
 }
 
-func Error(w http.ResponseWriter, statusCode int, code string, incErr string) {
-	err := WriteError(w, statusCode, code, incErr)
+func Error(w http.ResponseWriter, statusCode int, code string, msg string) {
+	err := WriteError(w, statusCode, code, msg)
 	if err != nil {
 		log.Printf("error: %v", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
@@ -66,16 +67,16 @@ func isValidRefreshToken(ctx context.Context, q *sqlc.Queries, token string) (bo
 	userId, err := q.CheckValidRefreshToken(ctx, tokenHash)
 	if err != nil {
 		return false, uuid.Nil, &utils.ServiceError{
-			StatusCode: 401,
-			Code:       "INVALID_REFRESH_TOKEN",
+			StatusCode: http.StatusUnauthorized,
+			Code:       utils.ErrInvalidRefreshToken,
 			Message:    err.Error(),
 		}
 	}
 
 	if userId == uuid.Nil {
 		return false, uuid.Nil, &utils.ServiceError{
-			StatusCode: 401,
-			Code:       "INVALID_REFRESH_TOKEN",
+			StatusCode: http.StatusUnauthorized,
+			Code:       utils.ErrInvalidRefreshToken,
 			Message:    "could not get user id from refresh token entry",
 		}
 	}
@@ -88,14 +89,14 @@ func CreateJWTById(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) (stri
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", &utils.ServiceError{
-				StatusCode: 404,
-				Code:       "JWT_FAIL",
+				StatusCode: http.StatusNotFound,
+				Code:       utils.ErrUserNotFound,
 				Message:    err.Error(),
 			}
 		}
 		return "", &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "DBTX_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
 			Message:    err.Error(),
 		}
 	}
@@ -103,8 +104,8 @@ func CreateJWTById(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) (stri
 	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username, row.Role)
 	if err != nil {
 		return "", &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "JWT_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrJwtFail,
 			Message:    err.Error(),
 		}
 	}

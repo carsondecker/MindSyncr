@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"database/sql"
+	"net/http"
 
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 	"github.com/carsondecker/MindSyncr/internal/utils"
@@ -13,8 +14,8 @@ func (h *AuthHandler) registerService(ctx context.Context, email, username, pass
 	passwordHash, err := hashPassword(password)
 	if err != nil {
 		return RegisterResponse{}, "", "", &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "HASH_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrHashFail,
 			Message:    err.Error(),
 		}
 	}
@@ -29,15 +30,15 @@ func (h *AuthHandler) registerService(ctx context.Context, email, username, pass
 		if pgErr, ok := err.(*pq.Error); ok {
 			if pgErr.Code == "23505" {
 				return RegisterResponse{}, "", "", &utils.ServiceError{
-					StatusCode: 400,
-					Code:       "USER_ALREADY_EXISTS",
+					StatusCode: http.StatusBadRequest,
+					Code:       utils.ErrUserAlreadyExists,
 					Message:    "this email is already in use",
 				}
 			}
 		}
 		return RegisterResponse{}, "", "", &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "DBTX_FAIL",
+			StatusCode: http.StatusBadRequest,
+			Code:       utils.ErrDbtxFail,
 			Message:    err.Error(),
 		}
 	}
@@ -45,8 +46,8 @@ func (h *AuthHandler) registerService(ctx context.Context, email, username, pass
 	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username, row.Role)
 	if err != nil {
 		return RegisterResponse{}, "", "", &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "JWT_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrJwtFail,
 			Message:    err.Error(),
 		}
 	}
@@ -54,8 +55,8 @@ func (h *AuthHandler) registerService(ctx context.Context, email, username, pass
 	refreshToken, refreshRes, err := createRefreshToken(ctx, h.cfg.Queries, row.ID)
 	if err != nil {
 		return RegisterResponse{}, "", "", &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "REFRESH_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrRefreshFail,
 			Message:    err.Error(),
 		}
 	}
@@ -76,14 +77,14 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return LoginResponse{}, "", "", &utils.ServiceError{
-				StatusCode: 401,
-				Code:       "INVALID_CREDENTIALS",
+				StatusCode: http.StatusUnauthorized,
+				Code:       utils.ErrInvalidCredentials,
 				Message:    err.Error(),
 			}
 		}
 		return LoginResponse{}, "", "", &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "DBTX_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
 			Message:    err.Error(),
 		}
 	}
@@ -91,8 +92,8 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 	err = checkPassword(row.PasswordHash, password)
 	if err != nil {
 		return LoginResponse{}, "", "", &utils.ServiceError{
-			StatusCode: 401,
-			Code:       "INVALID_CREDENTIALS",
+			StatusCode: http.StatusUnauthorized,
+			Code:       utils.ErrInvalidCredentials,
 			Message:    err.Error(),
 		}
 	}
@@ -100,8 +101,8 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username, row.Role)
 	if err != nil {
 		return LoginResponse{}, "", "", &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "JWT_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrJwtFail,
 			Message:    err.Error(),
 		}
 	}
@@ -109,8 +110,8 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 	refreshToken, refreshRes, err := createRefreshToken(ctx, h.cfg.Queries, row.ID)
 	if err != nil {
 		return LoginResponse{}, "", "", &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "REFRESH_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrRefreshFail,
 			Message:    err.Error(),
 		}
 	}
@@ -129,8 +130,8 @@ func (h *AuthHandler) refreshService(ctx context.Context, token string) (string,
 	tx, err := h.cfg.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "TX_BEGIN_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrTxBeginFail,
 			Message:    err.Error(),
 		}
 	}
@@ -146,8 +147,8 @@ func (h *AuthHandler) refreshService(ctx context.Context, token string) (string,
 
 	if !isValid {
 		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
-			StatusCode: 401,
-			Code:       "INVALID_REFRESH_TOKEN",
+			StatusCode: http.StatusUnauthorized,
+			Code:       utils.ErrInvalidRefreshToken,
 			Message:    "refresh token is invalid",
 		}
 	}
@@ -155,8 +156,8 @@ func (h *AuthHandler) refreshService(ctx context.Context, token string) (string,
 	err = qtx.RevokeUserTokens(ctx, userId)
 	if err != nil {
 		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "REFRESH_REVOKE_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrRefreshRevokeFail,
 			Message:    err.Error(),
 		}
 	}
@@ -164,8 +165,8 @@ func (h *AuthHandler) refreshService(ctx context.Context, token string) (string,
 	refreshToken, res, err := createRefreshToken(ctx, qtx, userId)
 	if err != nil {
 		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "REFRESH_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrRefreshFail,
 			Message:    err.Error(),
 		}
 	}
@@ -178,8 +179,8 @@ func (h *AuthHandler) refreshService(ctx context.Context, token string) (string,
 	err = tx.Commit()
 	if err != nil {
 		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "TX_COMMIT_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrTxCommitFail,
 			Message:    err.Error(),
 		}
 	}
@@ -195,8 +196,8 @@ func (h *AuthHandler) logoutService(ctx context.Context, token string) *utils.Se
 
 	if !isValid {
 		return &utils.ServiceError{
-			StatusCode: 401,
-			Code:       "INVALID_REFRESH_TOKEN",
+			StatusCode: http.StatusUnauthorized,
+			Code:       utils.ErrInvalidRefreshToken,
 			Message:    "refresh token is invalid",
 		}
 	}
@@ -204,8 +205,8 @@ func (h *AuthHandler) logoutService(ctx context.Context, token string) *utils.Se
 	err := h.cfg.Queries.RevokeUserTokens(ctx, userId)
 	if err != nil {
 		return &utils.ServiceError{
-			StatusCode: 500,
-			Code:       "REFRESH_REVOKE_FAIL",
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrRefreshRevokeFail,
 			Message:    err.Error(),
 		}
 	}
