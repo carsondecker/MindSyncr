@@ -12,6 +12,7 @@ import (
 
 type RefreshToken struct {
 	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
 	Token     string    `json:"token"`
 	IsRevoked bool      `json:"is_revoked"`
 	ExpiresAt time.Time `json:"expires_at"`

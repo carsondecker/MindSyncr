@@ -39,6 +39,7 @@ func (h *AuthHandler) createRefreshToken(ctx context.Context, id uuid.UUID) (str
 	expiresAt := time.Now().Add(7 * 24 * time.Hour)
 
 	row, err := h.cfg.Queries.InsertRefreshToken(ctx, sqlc.InsertRefreshTokenParams{
+		UserID:    id,
 		Token:     token,
 		ExpiresAt: expiresAt,
 	})
