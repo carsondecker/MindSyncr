@@ -42,8 +42,7 @@ func (h *AuthHandler) registerService(ctx context.Context, email, username, pass
 		}
 	}
 
-	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username)
-
+	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username, row.Role)
 	if err != nil {
 		return RegisterResponse{}, "", "", &utils.ServiceError{
 			StatusCode: 500,
@@ -52,7 +51,7 @@ func (h *AuthHandler) registerService(ctx context.Context, email, username, pass
 		}
 	}
 
-	refreshToken, refreshRes, err := h.createRefreshToken(ctx, row.ID)
+	refreshToken, refreshRes, err := createRefreshToken(ctx, h.cfg.Queries, row.ID)
 	if err != nil {
 		return RegisterResponse{}, "", "", &utils.ServiceError{
 			StatusCode: 500,
@@ -98,7 +97,7 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 		}
 	}
 
-	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username)
+	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username, row.Role)
 	if err != nil {
 		return LoginResponse{}, "", "", &utils.ServiceError{
 			StatusCode: 500,
@@ -107,7 +106,7 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 		}
 	}
 
-	refreshToken, refreshRes, err := h.createRefreshToken(ctx, row.ID)
+	refreshToken, refreshRes, err := createRefreshToken(ctx, h.cfg.Queries, row.ID)
 	if err != nil {
 		return LoginResponse{}, "", "", &utils.ServiceError{
 			StatusCode: 500,
@@ -124,4 +123,66 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 	}
 
 	return res, jwtToken, refreshToken, nil
+}
+
+func (h *AuthHandler) refreshService(ctx context.Context, token string) (string, string, RefreshTokenResponse, *utils.ServiceError) {
+	tx, err := h.cfg.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
+			StatusCode: 500,
+			Code:       "TX_BEGIN_FAIL",
+			Message:    err.Error(),
+		}
+	}
+
+	defer tx.Rollback()
+
+	qtx := h.cfg.Queries.WithTx(tx)
+
+	isValid, userId, sErr := isValidRefreshToken(ctx, qtx, token)
+	if sErr != nil || !isValid {
+		return "", "", RefreshTokenResponse{}, sErr
+	}
+
+	if !isValid {
+		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
+			StatusCode: 401,
+			Code:       "INVALID_REFRESH_TOKEN",
+			Message:    "refresh token is invalid",
+		}
+	}
+
+	err = qtx.RevokeUserTokens(ctx, userId)
+	if err != nil {
+		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
+			StatusCode: 500,
+			Code:       "REFRESH_REVOKE_FAIL",
+			Message:    err.Error(),
+		}
+	}
+
+	refreshToken, res, err := createRefreshToken(ctx, qtx, userId)
+	if err != nil {
+		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
+			StatusCode: 500,
+			Code:       "REFRESH_FAIL",
+			Message:    err.Error(),
+		}
+	}
+
+	jwtToken, sErr := CreateJWTById(ctx, qtx, userId)
+	if sErr != nil {
+		return "", "", RefreshTokenResponse{}, sErr
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
+			StatusCode: 500,
+			Code:       "TX_COMMIT_FAIL",
+			Message:    err.Error(),
+		}
+	}
+
+	return jwtToken, refreshToken, res, nil
 }

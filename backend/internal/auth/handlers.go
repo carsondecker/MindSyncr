@@ -39,7 +39,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "jwtToken",
+		Name:     "jwt_token",
 		Value:    jwtToken,
 		Path:     "/",
 		MaxAge:   15 * 60,
@@ -49,7 +49,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	})
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "refreshToken",
+		Name:     "refresh_token",
 		Value:    refreshToken,
 		Path:     "/",
 		MaxAge:   7 * 24 * 60,
@@ -81,7 +81,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "jwtToken",
+		Name:     "jwt_token",
 		Value:    jwtToken,
 		Path:     "/",
 		MaxAge:   15 * 60,
@@ -91,8 +91,45 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	})
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "refreshToken",
+		Name:     "refresh_token",
 		Value:    refreshToken,
+		Path:     "/",
+		MaxAge:   7 * 24 * 60,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	utils.Success(w, 201, res)
+}
+
+func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
+	refreshTokenCookie, err := r.Cookie("refresh_token")
+	if err != nil || refreshTokenCookie.Value == "" {
+		utils.Error(w, 400, "BAD_REQUEST", "no refresh token cookie provided")
+		return
+	}
+	refreshToken := refreshTokenCookie.Value
+
+	jwtToken, newRefreshToken, res, sErr := h.refreshService(r.Context(), refreshToken)
+	if sErr != nil {
+		utils.SError(w, sErr)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt_token",
+		Value:    jwtToken,
+		Path:     "/",
+		MaxAge:   15 * 60,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    newRefreshToken,
 		Path:     "/",
 		MaxAge:   7 * 24 * 60,
 		HttpOnly: true,

@@ -23,8 +23,9 @@ func TestCreateJWTAndGetClaims(t *testing.T) {
 				id := uuid.New()
 				email := "test@gmail.com"
 				username := "testuser"
+				role := "user"
 
-				tokenString, err := CreateJWT(id, email, username)
+				tokenString, err := CreateJWT(id, email, username, role)
 
 				require.NoError(t, err)
 				require.NotEmpty(t, tokenString)
@@ -53,8 +54,9 @@ func TestCreateJWTAndGetClaims(t *testing.T) {
 				id := uuid.New()
 				email := "test@gmail.com"
 				username := "testuser"
+				role := "user"
 
-				tokenString, err := CreateJWT(id, email, username)
+				tokenString, err := CreateJWT(id, email, username, role)
 
 				require.Error(t, err)
 				require.Empty(t, tokenString)

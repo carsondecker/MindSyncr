@@ -3,11 +3,14 @@ package auth
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"time"
 
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
+	"github.com/carsondecker/MindSyncr/internal/utils"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -28,7 +31,7 @@ func checkPassword(hashedPassword string, password string) error {
 	return nil
 }
 
-func (h *AuthHandler) createRefreshToken(ctx context.Context, id uuid.UUID) (string, RefreshTokenResponse, error) {
+func createRefreshToken(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) (string, RefreshTokenResponse, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -38,17 +41,80 @@ func (h *AuthHandler) createRefreshToken(ctx context.Context, id uuid.UUID) (str
 	token := base64.URLEncoding.EncodeToString(b)
 	expiresAt := time.Now().Add(7 * 24 * time.Hour)
 
-	row, err := h.cfg.Queries.InsertRefreshToken(ctx, sqlc.InsertRefreshTokenParams{
-		UserID:    id,
-		Token:     token,
+	hashBytes := sha256.Sum256([]byte(token))
+	tokenHash := base64.RawURLEncoding.EncodeToString(hashBytes[:])
+
+	row, err := q.InsertRefreshToken(ctx, sqlc.InsertRefreshTokenParams{
+		UserID:    userId,
+		TokenHash: tokenHash,
 		ExpiresAt: expiresAt,
 	})
 	if err != nil {
 		return "", RefreshTokenResponse{}, fmt.Errorf("failed to create refresh token: %w", err)
 	}
 
-	return row.Token, RefreshTokenResponse{
+	return token, RefreshTokenResponse{
 		ExpiresAt: row.ExpiresAt,
 		CreatedAt: row.CreatedAt,
 	}, nil
+}
+
+func isValidRefreshToken(ctx context.Context, q *sqlc.Queries, token string) (bool, uuid.UUID, *utils.ServiceError) {
+	hashBytes := sha256.Sum256([]byte(token))
+	tokenHash := base64.RawURLEncoding.EncodeToString(hashBytes[:])
+
+	userId, err := q.CheckValidRefreshToken(ctx, tokenHash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, uuid.Nil, &utils.ServiceError{
+				StatusCode: 401,
+				Code:       "INVALID_REFRESH_TOKEN",
+				Message:    err.Error(),
+			}
+		}
+		return false, uuid.Nil, &utils.ServiceError{
+			StatusCode: 401,
+			Code:       "REFRESH_FAIL",
+			Message:    err.Error(),
+		}
+	}
+
+	if userId == uuid.Nil {
+		return false, uuid.Nil, &utils.ServiceError{
+			StatusCode: 401,
+			Code:       "REFRESH_FAIL",
+			Message:    "could not get user id from refresh token entry",
+		}
+	}
+
+	return true, userId, nil
+}
+
+func CreateJWTById(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) (string, *utils.ServiceError) {
+	row, err := q.GetUserById(ctx, userId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", &utils.ServiceError{
+				StatusCode: 404,
+				Code:       "JWT_FAIL",
+				Message:    err.Error(),
+			}
+		}
+		return "", &utils.ServiceError{
+			StatusCode: 500,
+			Code:       "DBTX_FAIL",
+			Message:    err.Error(),
+		}
+	}
+
+	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username, row.Role)
+	if err != nil {
+		return "", &utils.ServiceError{
+			StatusCode: 500,
+			Code:       "JWT_FAIL",
+			Message:    err.Error(),
+		}
+	}
+
+	return jwtToken, nil
 }

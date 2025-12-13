@@ -12,8 +12,33 @@ import (
 	"github.com/google/uuid"
 )
 
+const getUserById = `-- name: GetUserById :one
+SELECT id, email, username, role
+FROM users
+WHERE id = $1
+`
+
+type GetUserByIdRow struct {
+	ID       uuid.UUID `json:"id"`
+	Email    string    `json:"email"`
+	Username string    `json:"username"`
+	Role     string    `json:"role"`
+}
+
+func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (GetUserByIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
+	var i GetUserByIdRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Username,
+		&i.Role,
+	)
+	return i, err
+}
+
 const getUserForLogin = `-- name: GetUserForLogin :one
-SELECT id, email, username, password_hash
+SELECT id, email, username, role, password_hash
 FROM users
 WHERE email = $1
 `
@@ -22,6 +47,7 @@ type GetUserForLoginRow struct {
 	ID           uuid.UUID `json:"id"`
 	Email        string    `json:"email"`
 	Username     string    `json:"username"`
+	Role         string    `json:"role"`
 	PasswordHash string    `json:"password_hash"`
 }
 
@@ -32,6 +58,7 @@ func (q *Queries) GetUserForLogin(ctx context.Context, email string) (GetUserFor
 		&i.ID,
 		&i.Email,
 		&i.Username,
+		&i.Role,
 		&i.PasswordHash,
 	)
 	return i, err
@@ -44,7 +71,7 @@ VALUES (
     $2,
     $3
 )
-RETURNING id, email, username, created_at
+RETURNING id, email, username, role, created_at
 `
 
 type InsertUserParams struct {
@@ -57,6 +84,7 @@ type InsertUserRow struct {
 	ID        uuid.UUID `json:"id"`
 	Email     string    `json:"email"`
 	Username  string    `json:"username"`
+	Role      string    `json:"role"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -67,6 +95,7 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (InsertU
 		&i.ID,
 		&i.Email,
 		&i.Username,
+		&i.Role,
 		&i.CreatedAt,
 	)
 	return i, err

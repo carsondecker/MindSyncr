@@ -20,6 +20,7 @@ func GetRouter(cfg *config.Config) *http.ServeMux {
 	authHandler := auth.NewAuthHandler(cfg)
 	authRouter.HandleFunc("POST /register", authHandler.HandleRegister)
 	authRouter.HandleFunc("POST /login", authHandler.HandleLogin)
+	authRouter.HandleFunc("POST /refresh", authHandler.HandleRefresh)
 
 	router.Handle("/auth/", http.StripPrefix("/auth", authRouter))
 

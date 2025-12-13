@@ -11,7 +11,7 @@ import (
 
 type Config struct {
 	Router    *http.ServeMux
-	db        *sql.DB
+	DB        *sql.DB
 	Queries   *sqlc.Queries
 	Validator *validator.Validate
 }
@@ -24,7 +24,7 @@ func NewConfig(db *sql.DB, queries *sqlc.Queries) *Config {
 
 	app := &Config{
 		Router:    router,
-		db:        db,
+		DB:        db,
 		Queries:   queries,
 		Validator: validate,
 	}

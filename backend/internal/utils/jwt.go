@@ -23,7 +23,7 @@ func JWTInit() {
 	secret = []byte(os.Getenv("JWT_SECRET"))
 }
 
-func CreateJWT(id uuid.UUID, email, username string) (string, error) {
+func CreateJWT(id uuid.UUID, email, username, role string) (string, error) {
 	if len(secret) == 0 {
 		return "", fmt.Errorf("failed to get jwt secret key")
 	}
@@ -32,6 +32,7 @@ func CreateJWT(id uuid.UUID, email, username string) (string, error) {
 		Id:       id,
 		Email:    email,
 		Username: username,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
