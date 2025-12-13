@@ -13,6 +13,7 @@ import (
 	"github.com/carsondecker/MindSyncr/internal/app"
 	"github.com/carsondecker/MindSyncr/internal/config"
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
+	"github.com/carsondecker/MindSyncr/internal/utils"
 )
 
 func main() {
@@ -27,6 +28,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	utils.JWTInit()
 
 	queries := sqlc.New(db)
 

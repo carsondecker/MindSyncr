@@ -11,6 +11,31 @@ import (
 	"github.com/google/uuid"
 )
 
+const getUserForLogin = `-- name: GetUserForLogin :one
+SELECT id, email, username, password_hash
+FROM users
+WHERE email = $1
+`
+
+type GetUserForLoginRow struct {
+	ID           uuid.UUID `json:"id"`
+	Email        string    `json:"email"`
+	Username     string    `json:"username"`
+	PasswordHash string    `json:"password_hash"`
+}
+
+func (q *Queries) GetUserForLogin(ctx context.Context, email string) (GetUserForLoginRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserForLogin, email)
+	var i GetUserForLoginRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Username,
+		&i.PasswordHash,
+	)
+	return i, err
+}
+
 const insertUser = `-- name: InsertUser :one
 INSERT INTO users (email, username, password_hash)
 VALUES (

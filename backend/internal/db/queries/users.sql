@@ -6,3 +6,8 @@ VALUES (
     $3
 )
 RETURNING id, email, username;
+
+-- name: GetUserForLogin :one
+SELECT id, email, username, password_hash
+FROM users
+WHERE email = $1;

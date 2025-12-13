@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 	"github.com/carsondecker/MindSyncr/internal/utils"
@@ -52,6 +53,50 @@ func (h *AuthHandler) registerService(ctx context.Context, email, username, pass
 	}
 
 	res := RegisterResponse{
+		Id:       row.ID,
+		Email:    row.Email,
+		Username: row.Username,
+	}
+
+	return res, jwtToken, nil
+}
+
+func (h *AuthHandler) loginService(ctx context.Context, email, password string) (LoginResponse, string, *utils.ServiceError) {
+	row, err := h.cfg.Queries.GetUserForLogin(ctx, email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return LoginResponse{}, "", &utils.ServiceError{
+				StatusCode: 401,
+				Code:       "INVALID_CREDENTIALS",
+				Message:    err.Error(),
+			}
+		}
+		return LoginResponse{}, "", &utils.ServiceError{
+			StatusCode: 500,
+			Code:       "DBTX_FAIL",
+			Message:    err.Error(),
+		}
+	}
+
+	err = checkPassword(row.PasswordHash, password)
+	if err != nil {
+		return LoginResponse{}, "", &utils.ServiceError{
+			StatusCode: 401,
+			Code:       "INVALID_CREDENTIALS",
+			Message:    err.Error(),
+		}
+	}
+
+	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username)
+	if err != nil {
+		return LoginResponse{}, "", &utils.ServiceError{
+			StatusCode: 500,
+			Code:       "JWT_FAIL",
+			Message:    err.Error(),
+		}
+	}
+
+	res := LoginResponse{
 		Id:       row.ID,
 		Email:    row.Email,
 		Username: row.Username,
