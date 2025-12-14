@@ -19,6 +19,16 @@ type RefreshToken struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type Room struct {
+	ID          uuid.UUID `json:"id"`
+	OwnerID     uuid.UUID `json:"owner_id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	JoinCode    string    `json:"join_code"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
 type User struct {
 	ID              uuid.UUID `json:"id"`
 	Email           string    `json:"email"`

@@ -172,7 +172,7 @@ func (h *AuthHandler) refreshService(ctx context.Context, userId uuid.UUID, toke
 		}
 	}
 
-	jwtToken, sErr := CreateJWTById(ctx, qtx, userId)
+	jwtToken, sErr := createJWTById(ctx, qtx, userId)
 	if sErr != nil {
 		return "", "", RefreshTokenResponse{}, sErr
 	}

@@ -59,7 +59,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	utils.Success(w, 201, res)
+	utils.Success(w, http.StatusCreated, res)
 }
 
 func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
@@ -101,7 +101,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	utils.Success(w, 201, res)
+	utils.Success(w, http.StatusOK, res)
 }
 
 func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
@@ -145,7 +145,7 @@ func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 	})
 
-	utils.Success(w, 201, res)
+	utils.Success(w, http.StatusOK, res)
 }
 
 func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
@@ -185,5 +185,5 @@ func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	})
 
-	utils.Success(w, 200, struct{}{})
+	utils.Success(w, http.StatusOK, struct{}{})
 }

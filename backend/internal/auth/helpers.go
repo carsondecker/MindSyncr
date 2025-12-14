@@ -84,7 +84,7 @@ func isValidRefreshToken(ctx context.Context, q *sqlc.Queries, token string) (bo
 	return true, nil
 }
 
-func CreateJWTById(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) (string, *utils.ServiceError) {
+func createJWTById(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) (string, *utils.ServiceError) {
 	row, err := q.GetUserById(ctx, userId)
 	if err != nil {
 		if err == sql.ErrNoRows {

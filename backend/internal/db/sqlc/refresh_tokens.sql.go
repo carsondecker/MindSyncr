@@ -13,7 +13,7 @@ import (
 )
 
 const checkValidRefreshToken = `-- name: CheckValidRefreshToken :one
-SELECT user_id
+SELECT id
 FROM refresh_tokens
 WHERE token_hash = $1
     AND is_revoked = FALSE
@@ -22,9 +22,9 @@ WHERE token_hash = $1
 
 func (q *Queries) CheckValidRefreshToken(ctx context.Context, tokenHash string) (uuid.UUID, error) {
 	row := q.db.QueryRowContext(ctx, checkValidRefreshToken, tokenHash)
-	var user_id uuid.UUID
-	err := row.Scan(&user_id)
-	return user_id, err
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
 }
 
 const insertRefreshToken = `-- name: InsertRefreshToken :one
