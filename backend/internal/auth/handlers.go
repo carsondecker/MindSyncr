@@ -7,6 +7,7 @@ import (
 
 	"github.com/carsondecker/MindSyncr/internal/config"
 	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
@@ -111,7 +112,14 @@ func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 	refreshToken := refreshTokenCookie.Value
 
-	jwtToken, newRefreshToken, res, sErr := h.refreshService(r.Context(), refreshToken)
+	ctx := r.Context()
+
+	userId := ctx.Value(utils.UserContextKey).(utils.Claims).UserId
+	if userId == uuid.Nil {
+		utils.Error(w, http.StatusInternalServerError, utils.ErrGetUserDataFail, "failed to get user id from access token")
+	}
+
+	jwtToken, newRefreshToken, res, sErr := h.refreshService(ctx, userId, refreshToken)
 	if sErr != nil {
 		utils.SError(w, sErr)
 		return
@@ -148,7 +156,14 @@ func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 	refreshToken := refreshTokenCookie.Value
 
-	sErr := h.logoutService(r.Context(), refreshToken)
+	ctx := r.Context()
+
+	userId := ctx.Value(utils.UserContextKey).(utils.Claims).UserId
+	if userId == uuid.Nil {
+		utils.Error(w, http.StatusInternalServerError, utils.ErrGetUserDataFail, "failed to get user id from access token")
+	}
+
+	sErr := h.logoutService(ctx, userId, refreshToken)
 	if sErr != nil {
 		utils.SError(w, sErr)
 		return

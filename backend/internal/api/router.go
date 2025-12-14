@@ -1,4 +1,4 @@
-package app
+package api
 
 import (
 	"net/http"
@@ -21,7 +21,7 @@ func GetRouter(cfg *config.Config) *http.ServeMux {
 	authRouter.HandleFunc("POST /register", authHandler.HandleRegister)
 	authRouter.HandleFunc("POST /login", authHandler.HandleLogin)
 	authRouter.HandleFunc("POST /refresh", authHandler.HandleRefresh)
-	authRouter.HandleFunc("POST /logout", authHandler.HandleLogout)
+	authRouter.Handle("POST /logout", utils.AuthMiddleware(http.HandlerFunc(authHandler.HandleLogout)))
 
 	router.Handle("/auth/", http.StripPrefix("/auth", authRouter))
 

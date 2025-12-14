@@ -20,12 +20,12 @@ func TestCreateJWTAndGetClaims(t *testing.T) {
 		{
 			name: "success",
 			test: func(t *testing.T) {
-				id := uuid.New()
+				userId := uuid.New()
 				email := "test@gmail.com"
 				username := "testuser"
 				role := "user"
 
-				tokenString, err := CreateJWT(id, email, username, role)
+				tokenString, err := CreateJWT(userId, email, username, role)
 
 				require.NoError(t, err)
 				require.NotEmpty(t, tokenString)
@@ -35,7 +35,7 @@ func TestCreateJWTAndGetClaims(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, claims)
 
-				require.Equal(t, id, claims.Id)
+				require.Equal(t, userId, claims.UserId)
 				require.Equal(t, email, claims.Email)
 				require.Equal(t, username, claims.Username)
 				require.Equal(t, "MindSyncr", claims.Issuer)
@@ -51,12 +51,12 @@ func TestCreateJWTAndGetClaims(t *testing.T) {
 			name: "failure - no secret key",
 			test: func(t *testing.T) {
 				secret = []byte("")
-				id := uuid.New()
+				userId := uuid.New()
 				email := "test@gmail.com"
 				username := "testuser"
 				role := "user"
 
-				tokenString, err := CreateJWT(id, email, username, role)
+				tokenString, err := CreateJWT(userId, email, username, role)
 
 				require.Error(t, err)
 				require.Empty(t, tokenString)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -126,7 +127,7 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 	return res, jwtToken, refreshToken, nil
 }
 
-func (h *AuthHandler) refreshService(ctx context.Context, token string) (string, string, RefreshTokenResponse, *utils.ServiceError) {
+func (h *AuthHandler) refreshService(ctx context.Context, userId uuid.UUID, token string) (string, string, RefreshTokenResponse, *utils.ServiceError) {
 	tx, err := h.cfg.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
@@ -140,7 +141,7 @@ func (h *AuthHandler) refreshService(ctx context.Context, token string) (string,
 
 	qtx := h.cfg.Queries.WithTx(tx)
 
-	isValid, userId, sErr := isValidRefreshToken(ctx, qtx, token)
+	isValid, sErr := isValidRefreshToken(ctx, qtx, token)
 	if sErr != nil {
 		return "", "", RefreshTokenResponse{}, sErr
 	}
@@ -188,8 +189,8 @@ func (h *AuthHandler) refreshService(ctx context.Context, token string) (string,
 	return jwtToken, refreshToken, res, nil
 }
 
-func (h *AuthHandler) logoutService(ctx context.Context, token string) *utils.ServiceError {
-	isValid, userId, sErr := isValidRefreshToken(ctx, h.cfg.Queries, token)
+func (h *AuthHandler) logoutService(ctx context.Context, userId uuid.UUID, token string) *utils.ServiceError {
+	isValid, sErr := isValidRefreshToken(ctx, h.cfg.Queries, token)
 	if sErr != nil {
 		return sErr
 	}

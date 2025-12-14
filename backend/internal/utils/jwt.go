@@ -12,7 +12,7 @@ import (
 var secret []byte
 
 type Claims struct {
-	Id       uuid.UUID `json:"id"`
+	UserId   uuid.UUID `json:"id"`
 	Email    string    `json:"email"`
 	Username string    `json:"username"`
 	Role     string    `json:"role"`
@@ -23,13 +23,13 @@ func JWTInit() {
 	secret = []byte(os.Getenv("JWT_SECRET"))
 }
 
-func CreateJWT(id uuid.UUID, email, username, role string) (string, error) {
+func CreateJWT(userId uuid.UUID, email, username, role string) (string, error) {
 	if len(secret) == 0 {
 		return "", fmt.Errorf("failed to get jwt secret key")
 	}
 
 	claims := Claims{
-		Id:       id,
+		UserId:   userId,
 		Email:    email,
 		Username: username,
 		Role:     role,
@@ -69,7 +69,7 @@ func GetClaims(tokenString string) (*Claims, error) {
 		return nil, fmt.Errorf("could not parse jwt claims")
 	}
 
-	if claims.Id == uuid.Nil || claims.Email == "" || claims.Username == "" {
+	if claims.UserId == uuid.Nil || claims.Email == "" || claims.Username == "" {
 		return nil, fmt.Errorf("invalid claims: missing required fields")
 	}
 

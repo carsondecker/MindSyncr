@@ -2,12 +2,12 @@ package rooms
 
 import "github.com/carsondecker/MindSyncr/internal/config"
 
-type RoomHandler struct {
+type RoomsHandler struct {
 	cfg *config.Config
 }
 
-func NewRoomHandler(cfg *config.Config) *RoomHandler {
-	return &RoomHandler{
+func NewRoomsHandler(cfg *config.Config) *RoomsHandler {
+	return &RoomsHandler{
 		cfg,
 	}
 }

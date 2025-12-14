@@ -10,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 
-	"github.com/carsondecker/MindSyncr/internal/app"
+	"github.com/carsondecker/MindSyncr/internal/api"
 	"github.com/carsondecker/MindSyncr/internal/config"
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 	"github.com/carsondecker/MindSyncr/internal/utils"
@@ -35,7 +35,7 @@ func main() {
 
 	config := config.NewConfig(db, queries)
 
-	config.Router = app.GetRouter(config)
+	config.Router = api.GetRouter(config)
 
 	srv := &http.Server{
 		Handler:      config.Router,

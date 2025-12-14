@@ -60,28 +60,28 @@ func createRefreshToken(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) 
 	}, nil
 }
 
-func isValidRefreshToken(ctx context.Context, q *sqlc.Queries, token string) (bool, uuid.UUID, *utils.ServiceError) {
+func isValidRefreshToken(ctx context.Context, q *sqlc.Queries, token string) (bool, *utils.ServiceError) {
 	hashBytes := sha256.Sum256([]byte(token))
 	tokenHash := base64.RawURLEncoding.EncodeToString(hashBytes[:])
 
-	userId, err := q.CheckValidRefreshToken(ctx, tokenHash)
+	id, err := q.CheckValidRefreshToken(ctx, tokenHash)
 	if err != nil {
-		return false, uuid.Nil, &utils.ServiceError{
+		return false, &utils.ServiceError{
 			StatusCode: http.StatusUnauthorized,
 			Code:       utils.ErrInvalidRefreshToken,
 			Message:    err.Error(),
 		}
 	}
 
-	if userId == uuid.Nil {
-		return false, uuid.Nil, &utils.ServiceError{
+	if id == uuid.Nil {
+		return false, &utils.ServiceError{
 			StatusCode: http.StatusUnauthorized,
 			Code:       utils.ErrInvalidRefreshToken,
-			Message:    "could not get user id from refresh token entry",
+			Message:    "could not get id from refresh token entry",
 		}
 	}
 
-	return true, userId, nil
+	return true, nil
 }
 
 func CreateJWTById(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) (string, *utils.ServiceError) {
