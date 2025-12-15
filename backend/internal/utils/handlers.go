@@ -59,14 +59,14 @@ func GetClaims(r *http.Request, validator *validator.Validate) (*Claims, *Servic
 	return claims, nil
 }
 
-func BaseHandlerWithClaimsFunc[T, R any](
+func BaseHandlerFuncWithBodyAndClaims[Req, Res any](
 	h BaseHandler,
 	w http.ResponseWriter,
 	r *http.Request,
 	successCode int,
-	serviceFunc func(data T, claims *Claims) (R, *ServiceError),
+	serviceFunc func(data Req, claims *Claims) (Res, *ServiceError),
 ) {
-	data, sErr := DecodeAndValidate[T](r, h.GetConfig().Validator)
+	data, sErr := DecodeAndValidate[Req](r, h.GetConfig().Validator)
 	if sErr != nil {
 		SError(w, sErr)
 		return
@@ -79,6 +79,66 @@ func BaseHandlerWithClaimsFunc[T, R any](
 	}
 
 	res, sErr := serviceFunc(data, claims)
+	if sErr != nil {
+		SError(w, sErr)
+		return
+	}
+
+	Success(w, successCode, res)
+}
+
+func BaseHandlerFuncWithClaims[Res any](
+	h BaseHandler,
+	w http.ResponseWriter,
+	r *http.Request,
+	successCode int,
+	serviceFunc func(claims *Claims) (Res, *ServiceError),
+) {
+	claims, sErr := GetClaims(r, h.GetConfig().Validator)
+	if sErr != nil {
+		SError(w, sErr)
+		return
+	}
+
+	res, sErr := serviceFunc(claims)
+	if sErr != nil {
+		SError(w, sErr)
+		return
+	}
+
+	Success(w, successCode, res)
+}
+
+func BaseHandlerFuncWithBody[Req, Res any](
+	h BaseHandler,
+	w http.ResponseWriter,
+	r *http.Request,
+	successCode int,
+	serviceFunc func(data Req) (Res, *ServiceError),
+) {
+	data, sErr := DecodeAndValidate[Req](r, h.GetConfig().Validator)
+	if sErr != nil {
+		SError(w, sErr)
+		return
+	}
+
+	res, sErr := serviceFunc(data)
+	if sErr != nil {
+		SError(w, sErr)
+		return
+	}
+
+	Success(w, successCode, res)
+}
+
+func BaseHandlerFunc[Res any](
+	h BaseHandler,
+	w http.ResponseWriter,
+	r *http.Request,
+	successCode int,
+	serviceFunc func() (Res, *ServiceError),
+) {
+	res, sErr := serviceFunc()
 	if sErr != nil {
 		SError(w, sErr)
 		return

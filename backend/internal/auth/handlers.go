@@ -1,12 +1,9 @@
 package auth
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/carsondecker/MindSyncr/internal/utils"
-	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
@@ -19,170 +16,148 @@ func NewAuthHandler(cfg *utils.Config) *AuthHandler {
 	}
 }
 
+func (h *AuthHandler) GetConfig() *utils.Config {
+	return h.cfg
+}
+
 func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
-	var registerRequest RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&registerRequest); err != nil {
-		utils.Error(w, http.StatusBadRequest, utils.ErrBadRequest, fmt.Sprintf("failed to decode data: %s", err.Error()))
-		return
-	}
+	utils.BaseHandlerFuncWithBody(h, w, r,
+		http.StatusCreated,
+		func(data RegisterRequest) (RegisterResponse, *utils.ServiceError) {
+			res, jwtToken, refreshToken, sErr := h.registerService(r.Context(), data.Email, data.Username, data.Password)
+			if sErr != nil {
+				return RegisterResponse{}, sErr
+			}
 
-	err := h.cfg.Validator.Struct(registerRequest)
-	if err != nil {
-		utils.Error(w, http.StatusUnprocessableEntity, utils.ErrValidationFailed, err.Error())
-		return
-	}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "access_token",
+				Value:    jwtToken,
+				Path:     "/",
+				MaxAge:   15 * 60,
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+			})
 
-	res, jwtToken, refreshToken, sErr := h.registerService(r.Context(), registerRequest.Email, registerRequest.Username, registerRequest.Password)
-	if sErr != nil {
-		utils.SError(w, sErr)
-		return
-	}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "refresh_token",
+				Value:    refreshToken,
+				Path:     "/",
+				MaxAge:   7 * 24 * 60,
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+			})
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    jwtToken,
-		Path:     "/",
-		MaxAge:   15 * 60,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	})
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Path:     "/",
-		MaxAge:   7 * 24 * 60,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	})
-
-	utils.Success(w, http.StatusCreated, res)
+			return res, nil
+		},
+	)
 }
 
 func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
-	var loginRequest LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
-		utils.Error(w, http.StatusBadRequest, utils.ErrBadRequest, fmt.Sprintf("failed to decode data: %s", err.Error()))
-		return
-	}
+	utils.BaseHandlerFuncWithBody(h, w, r,
+		http.StatusOK,
+		func(data LoginRequest) (LoginResponse, *utils.ServiceError) {
+			res, jwtToken, refreshToken, sErr := h.loginService(r.Context(), data.Email, data.Password)
+			if sErr != nil {
+				return LoginResponse{}, sErr
+			}
 
-	err := h.cfg.Validator.Struct(loginRequest)
-	if err != nil {
-		utils.Error(w, http.StatusUnprocessableEntity, utils.ErrValidationFailed, err.Error())
-		return
-	}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "access_token",
+				Value:    jwtToken,
+				Path:     "/",
+				MaxAge:   15 * 60,
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+			})
 
-	res, jwtToken, refreshToken, sErr := h.loginService(r.Context(), loginRequest.Email, loginRequest.Password)
-	if sErr != nil {
-		utils.SError(w, sErr)
-		return
-	}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "refresh_token",
+				Value:    refreshToken,
+				Path:     "/",
+				MaxAge:   7 * 24 * 60,
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+			})
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    jwtToken,
-		Path:     "/",
-		MaxAge:   15 * 60,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	})
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Path:     "/",
-		MaxAge:   7 * 24 * 60,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	})
-
-	utils.Success(w, http.StatusOK, res)
+			return res, nil
+		},
+	)
 }
 
 func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
-	refreshTokenCookie, err := r.Cookie("refresh_token")
-	if err != nil || refreshTokenCookie.Value == "" {
-		utils.Error(w, http.StatusBadRequest, utils.ErrBadRequest, "no refresh token cookie provided")
-		return
-	}
-	refreshToken := refreshTokenCookie.Value
+	utils.BaseHandlerFuncWithClaims(h, w, r,
+		http.StatusCreated,
+		func(claims *utils.Claims) (RefreshTokenResponse, *utils.ServiceError) {
+			refreshToken, sErr := getRefreshToken(r)
+			if sErr != nil {
+				return RefreshTokenResponse{}, sErr
+			}
 
-	ctx := r.Context()
+			jwtToken, newRefreshToken, res, sErr := h.refreshService(r.Context(), claims.UserId, refreshToken)
+			if sErr != nil {
+				return RefreshTokenResponse{}, sErr
+			}
 
-	userId := ctx.Value(utils.UserContextKey).(*utils.Claims).UserId
-	if userId == uuid.Nil {
-		utils.Error(w, http.StatusInternalServerError, utils.ErrGetUserDataFail, "failed to get user id from access token")
-	}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "access_token",
+				Value:    jwtToken,
+				Path:     "/",
+				MaxAge:   15 * 60,
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+			})
 
-	jwtToken, newRefreshToken, res, sErr := h.refreshService(ctx, userId, refreshToken)
-	if sErr != nil {
-		utils.SError(w, sErr)
-		return
-	}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "refresh_token",
+				Value:    newRefreshToken,
+				Path:     "/",
+				MaxAge:   7 * 24 * 60,
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+			})
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    jwtToken,
-		Path:     "/",
-		MaxAge:   15 * 60,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	})
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    newRefreshToken,
-		Path:     "/",
-		MaxAge:   7 * 24 * 60,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	})
-
-	utils.Success(w, http.StatusOK, res)
+			return res, nil
+		},
+	)
 }
 
 func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	refreshTokenCookie, err := r.Cookie("refresh_token")
-	if err != nil || refreshTokenCookie.Value == "" {
-		utils.Error(w, http.StatusBadRequest, utils.ErrBadRequest, "no refresh token cookie provided")
-		return
-	}
-	refreshToken := refreshTokenCookie.Value
+	utils.BaseHandlerFuncWithClaims(h, w, r,
+		http.StatusOK,
+		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
+			refreshToken, sErr := getRefreshToken(r)
+			if sErr != nil {
+				return struct{}{}, sErr
+			}
 
-	ctx := r.Context()
+			sErr = h.logoutService(r.Context(), claims.UserId, refreshToken)
+			if sErr != nil {
+				return struct{}{}, sErr
+			}
 
-	userId := ctx.Value(utils.UserContextKey).(*utils.Claims).UserId
-	if userId == uuid.Nil {
-		utils.Error(w, http.StatusInternalServerError, utils.ErrGetUserDataFail, "failed to get user id from access token")
-	}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "access_token",
+				Value:    "",
+				MaxAge:   -1,
+				Path:     "/",
+				HttpOnly: true,
+			})
 
-	sErr := h.logoutService(ctx, userId, refreshToken)
-	if sErr != nil {
-		utils.SError(w, sErr)
-		return
-	}
+			http.SetCookie(w, &http.Cookie{
+				Name:     "refresh_token",
+				Value:    "",
+				MaxAge:   -1,
+				Path:     "/",
+				HttpOnly: true,
+			})
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    "",
-		MaxAge:   -1,
-		Path:     "/",
-		HttpOnly: true,
-	})
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    "",
-		MaxAge:   -1,
-		Path:     "/",
-		HttpOnly: true,
-	})
-
-	utils.Success(w, http.StatusOK, struct{}{})
+			return struct{}{}, nil
+		},
+	)
 }

@@ -112,3 +112,16 @@ func createJWTById(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) (stri
 
 	return jwtToken, nil
 }
+
+func getRefreshToken(r *http.Request) (string, *utils.ServiceError) {
+	refreshTokenCookie, err := r.Cookie("refresh_token")
+	if err != nil || refreshTokenCookie.Value == "" {
+		return "", &utils.ServiceError{
+			StatusCode: http.StatusBadRequest,
+			Code:       utils.ErrBadRequest,
+			Message:    "no refresh token cookie provided",
+		}
+	}
+
+	return refreshTokenCookie.Value, nil
+}
