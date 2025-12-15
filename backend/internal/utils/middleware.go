@@ -12,7 +12,7 @@ const UserContextKey contextKey = "user"
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("access_token")
-		if err != nil {
+		if err != nil || cookie.Value == "" {
 			Error(w, http.StatusUnauthorized, ErrMissingAccessToken, "no access token cookie found")
 			return
 		}

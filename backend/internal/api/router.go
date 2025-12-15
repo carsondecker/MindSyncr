@@ -5,6 +5,7 @@ import (
 
 	"github.com/carsondecker/MindSyncr/internal/auth"
 	"github.com/carsondecker/MindSyncr/internal/config"
+	"github.com/carsondecker/MindSyncr/internal/rooms"
 	"github.com/carsondecker/MindSyncr/internal/utils"
 )
 
@@ -24,6 +25,12 @@ func GetRouter(cfg *config.Config) *http.ServeMux {
 	authRouter.Handle("POST /logout", utils.AuthMiddleware(http.HandlerFunc(authHandler.HandleLogout)))
 
 	router.Handle("/auth/", http.StripPrefix("/auth", authRouter))
+
+	roomsRouter := http.NewServeMux()
+	roomsHandler := rooms.NewRoomsHandler(cfg)
+	roomsRouter.Handle("POST /", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleCreateRoom)))
+
+	router.Handle("/rooms/", http.StripPrefix("/rooms", roomsRouter))
 
 	return baseRouter
 }

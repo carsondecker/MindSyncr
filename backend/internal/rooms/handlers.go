@@ -35,7 +35,7 @@ func (h *RoomsHandler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) 
 
 	ctx := r.Context()
 
-	userId := ctx.Value(utils.UserContextKey).(utils.Claims).UserId
+	userId := ctx.Value(utils.UserContextKey).(*utils.Claims).UserId
 	if userId == uuid.Nil {
 		utils.Error(w, http.StatusInternalServerError, utils.ErrGetUserDataFail, "failed to get user id from access token")
 	}
