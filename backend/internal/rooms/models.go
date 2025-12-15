@@ -7,7 +7,7 @@ import (
 )
 
 type CreateRoomRequest struct {
-	Name        string `json:"name" validation:"required,min=1"`
+	Name        string `json:"name" validate:"required,min=1"`
 	Description string `json:"description"`
 }
 

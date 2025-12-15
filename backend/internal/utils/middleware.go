@@ -17,7 +17,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		claims, err := GetClaims(cookie.Value)
+		claims, err := GetClaimsFromToken(cookie.Value)
 		if err != nil {
 			Error(w, http.StatusUnauthorized, ErrInvalidAccessToken, "invalid or expired token")
 			return

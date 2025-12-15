@@ -4,12 +4,11 @@ import (
 	"net/http"
 
 	"github.com/carsondecker/MindSyncr/internal/auth"
-	"github.com/carsondecker/MindSyncr/internal/config"
 	"github.com/carsondecker/MindSyncr/internal/rooms"
 	"github.com/carsondecker/MindSyncr/internal/utils"
 )
 
-func GetRouter(cfg *config.Config) *http.ServeMux {
+func GetRouter(cfg *utils.Config) *http.ServeMux {
 	baseRouter := http.NewServeMux()
 	router := http.NewServeMux()
 
@@ -21,7 +20,7 @@ func GetRouter(cfg *config.Config) *http.ServeMux {
 	authHandler := auth.NewAuthHandler(cfg)
 	authRouter.HandleFunc("POST /register", authHandler.HandleRegister)
 	authRouter.HandleFunc("POST /login", authHandler.HandleLogin)
-	authRouter.HandleFunc("POST /refresh", authHandler.HandleRefresh)
+	authRouter.Handle("POST /refresh", utils.AuthMiddleware(http.HandlerFunc(authHandler.HandleRefresh)))
 	authRouter.Handle("POST /logout", utils.AuthMiddleware(http.HandlerFunc(authHandler.HandleLogout)))
 
 	router.Handle("/auth/", http.StripPrefix("/auth", authRouter))

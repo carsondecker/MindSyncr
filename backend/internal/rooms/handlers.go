@@ -1,25 +1,26 @@
 package rooms
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
-	"github.com/carsondecker/MindSyncr/internal/config"
 	"github.com/carsondecker/MindSyncr/internal/utils"
-	"github.com/google/uuid"
 )
 
 type RoomsHandler struct {
-	cfg *config.Config
+	cfg *utils.Config
 }
 
-func NewRoomsHandler(cfg *config.Config) *RoomsHandler {
+func NewRoomsHandler(cfg *utils.Config) *RoomsHandler {
 	return &RoomsHandler{
 		cfg,
 	}
 }
 
+func (h RoomsHandler) GetConfig() *utils.Config {
+	return h.cfg
+}
+
+/*
 func (h *RoomsHandler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 	var createRoomRequest CreateRoomRequest
 	if err := json.NewDecoder(r.Body).Decode(&createRoomRequest); err != nil {
@@ -47,4 +48,17 @@ func (h *RoomsHandler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) 
 	}
 
 	utils.Success(w, http.StatusCreated, res)
+}
+*/
+
+func (h *RoomsHandler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
+	utils.BaseHandlerWithClaimsFunc(
+		h,
+		w,
+		r,
+		201,
+		func(data CreateRoomRequest, claims *utils.Claims) (CreateRoomResponse, *utils.ServiceError) {
+			return h.createRoomService(r.Context(), claims.UserId, data.Name, data.Description)
+		},
+	)
 }

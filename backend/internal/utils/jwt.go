@@ -12,10 +12,10 @@ import (
 var secret []byte
 
 type Claims struct {
-	UserId   uuid.UUID `json:"id"`
-	Email    string    `json:"email"`
-	Username string    `json:"username"`
-	Role     string    `json:"role"`
+	UserId   uuid.UUID `json:"id" validate:"required,not_nil_uuid"`
+	Email    string    `json:"email" validate:"required,email"`
+	Username string    `json:"username" validate:"required,min=1"`
+	Role     string    `json:"role" validate:"required,min=1"`
 	jwt.RegisteredClaims
 }
 
@@ -51,7 +51,7 @@ func CreateJWT(userId uuid.UUID, email, username, role string) (string, error) {
 	return ss, nil
 }
 
-func GetClaims(tokenString string) (*Claims, error) {
+func GetClaimsFromToken(tokenString string) (*Claims, error) {
 	if len(secret) == 0 {
 		return nil, fmt.Errorf("failed to get jwt secret key")
 	}

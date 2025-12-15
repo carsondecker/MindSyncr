@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/carsondecker/MindSyncr/internal/config"
 	"github.com/carsondecker/MindSyncr/internal/utils"
 	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
-	cfg *config.Config
+	cfg *utils.Config
 }
 
-func NewAuthHandler(cfg *config.Config) *AuthHandler {
+func NewAuthHandler(cfg *utils.Config) *AuthHandler {
 	return &AuthHandler{
 		cfg,
 	}
@@ -114,7 +113,7 @@ func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	userId := ctx.Value(utils.UserContextKey).(utils.Claims).UserId
+	userId := ctx.Value(utils.UserContextKey).(*utils.Claims).UserId
 	if userId == uuid.Nil {
 		utils.Error(w, http.StatusInternalServerError, utils.ErrGetUserDataFail, "failed to get user id from access token")
 	}
@@ -158,7 +157,7 @@ func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	userId := ctx.Value(utils.UserContextKey).(utils.Claims).UserId
+	userId := ctx.Value(utils.UserContextKey).(*utils.Claims).UserId
 	if userId == uuid.Nil {
 		utils.Error(w, http.StatusInternalServerError, utils.ErrGetUserDataFail, "failed to get user id from access token")
 	}

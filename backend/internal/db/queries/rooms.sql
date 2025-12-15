@@ -12,3 +12,8 @@ RETURNING id, name, description, join_code, created_at, updated_at;
 SELECT id
 FROM rooms
 WHERE join_code = $1;
+
+-- name: GetRoomsByUser :many
+SELECT id, name, description, join_code, created_at, updated_at
+FROM rooms
+WHERE user_id = $1;

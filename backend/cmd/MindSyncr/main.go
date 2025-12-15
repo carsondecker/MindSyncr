@@ -11,7 +11,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/carsondecker/MindSyncr/internal/api"
-	"github.com/carsondecker/MindSyncr/internal/config"
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 	"github.com/carsondecker/MindSyncr/internal/utils"
 )
@@ -33,7 +32,7 @@ func main() {
 
 	queries := sqlc.New(db)
 
-	config := config.NewConfig(db, queries)
+	config := utils.NewConfig(db, queries)
 
 	config.Router = api.GetRouter(config)
 

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateJWTAndGetClaims(t *testing.T) {
+func TestCreateJWTAndGetClaimsFromToken(t *testing.T) {
 	os.Setenv("JWT_SECRET", "testsecret123")
 
 	tcs := []struct {
@@ -30,7 +30,7 @@ func TestCreateJWTAndGetClaims(t *testing.T) {
 				require.NoError(t, err)
 				require.NotEmpty(t, tokenString)
 
-				claims, err := GetClaims(tokenString)
+				claims, err := GetClaimsFromToken(tokenString)
 
 				require.NoError(t, err)
 				require.NotNil(t, claims)
@@ -62,7 +62,7 @@ func TestCreateJWTAndGetClaims(t *testing.T) {
 				require.Empty(t, tokenString)
 
 				// no secret key check comes before token check
-				claims, err := GetClaims("")
+				claims, err := GetClaimsFromToken("")
 
 				require.Error(t, err)
 				require.Equal(t, "failed to get jwt secret key", err.Error())
@@ -77,7 +77,7 @@ func TestCreateJWTAndGetClaims(t *testing.T) {
 				token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 				ss, _ := token.SignedString(secret)
 
-				c, err := GetClaims(ss)
+				c, err := GetClaimsFromToken(ss)
 				require.Error(t, err)
 				require.Nil(t, c)
 			},

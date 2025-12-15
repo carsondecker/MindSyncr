@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 var (
@@ -16,6 +17,7 @@ var (
 
 func RegisterCustomValidations(v *validator.Validate) {
 	v.RegisterValidation("password", validatePassword)
+	v.RegisterValidation("not_nil_uuid", notNilUUID)
 }
 
 func validatePassword(fl validator.FieldLevel) bool {
@@ -42,4 +44,12 @@ func validatePassword(fl validator.FieldLevel) bool {
 	}
 
 	return true
+}
+
+func notNilUUID(fl validator.FieldLevel) bool {
+	u, ok := fl.Field().Interface().(uuid.UUID)
+	if !ok {
+		return false
+	}
+	return u != uuid.Nil
 }

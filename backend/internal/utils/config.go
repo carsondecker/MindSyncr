@@ -1,11 +1,10 @@
-package config
+package utils
 
 import (
 	"database/sql"
 	"net/http"
 
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
-	"github.com/carsondecker/MindSyncr/internal/utils"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -20,7 +19,7 @@ func NewConfig(db *sql.DB, queries *sqlc.Queries) *Config {
 	router := http.NewServeMux()
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	utils.RegisterCustomValidations(validate)
+	RegisterCustomValidations(validate)
 
 	app := &Config{
 		Router:    router,
