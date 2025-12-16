@@ -43,3 +43,55 @@ func (h *RoomsHandler) createRoomService(ctx context.Context, userId uuid.UUID, 
 
 	return res, nil
 }
+
+func (h *RoomsHandler) getRoomsService(ctx context.Context, userId uuid.UUID) ([]Room, *utils.ServiceError) {
+	rows, err := h.cfg.Queries.GetRoomsByUser(ctx, userId)
+	if err != nil {
+		return nil, &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	rooms := make([]Room, 0)
+	for _, row := range rows {
+		rooms = append(rooms, Room{
+			row.ID,
+			row.Name,
+			row.Description,
+			row.JoinCode,
+			row.CreatedAt,
+			row.UpdatedAt,
+		})
+	}
+
+	return rooms, nil
+}
+
+func (h *RoomsHandler) updateRoomsService(ctx context.Context, userId uuid.UUID, joinCode string, data PatchRoomRequest) (Room, *utils.ServiceError) {
+	row, err := h.cfg.Queries.UpdateRoom(ctx, sqlc.UpdateRoomParams{
+		OwnerID:     userId,
+		JoinCode:    joinCode,
+		Name:        NewNullString(data.Name),
+		Description: NewNullString(data.Description),
+	})
+	if err != nil {
+		return Room{}, &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	res := Room{
+		Id:          row.ID,
+		Name:        row.Name,
+		Description: row.Description,
+		JoinCode:    row.JoinCode,
+		CreatedAt:   row.CreatedAt,
+		UpdatedAt:   row.UpdatedAt,
+	}
+
+	return res, nil
+}

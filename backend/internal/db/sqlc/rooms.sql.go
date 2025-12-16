@@ -7,6 +7,7 @@ package sqlc
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,6 +32,51 @@ func (q *Queries) CheckNewJoinCode(ctx context.Context, joinCode string) ([]uuid
 			return nil, err
 		}
 		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getRoomsByUser = `-- name: GetRoomsByUser :many
+SELECT id, name, description, join_code, created_at, updated_at
+FROM rooms
+WHERE owner_id = $1
+`
+
+type GetRoomsByUserRow struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	JoinCode    string    `json:"join_code"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+func (q *Queries) GetRoomsByUser(ctx context.Context, ownerID uuid.UUID) ([]GetRoomsByUserRow, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByUser, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRoomsByUserRow
+	for rows.Next() {
+		var i GetRoomsByUserRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.JoinCode,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -76,6 +122,52 @@ func (q *Queries) InsertRoom(ctx context.Context, arg InsertRoomParams) (InsertR
 		arg.JoinCode,
 	)
 	var i InsertRoomRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.JoinCode,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateRoom = `-- name: UpdateRoom :one
+UPDATE rooms
+SET 
+    name = COALESCE($3, name),
+    description = COALESCE($4, description),
+    updated_at = NOW()
+WHERE owner_id = $1
+    AND join_code = $2
+RETURNING id, name, description, join_code, created_at, updated_at
+`
+
+type UpdateRoomParams struct {
+	OwnerID     uuid.UUID      `json:"owner_id"`
+	JoinCode    string         `json:"join_code"`
+	Name        sql.NullString `json:"name"`
+	Description sql.NullString `json:"description"`
+}
+
+type UpdateRoomRow struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	JoinCode    string    `json:"join_code"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) (UpdateRoomRow, error) {
+	row := q.db.QueryRowContext(ctx, updateRoom,
+		arg.OwnerID,
+		arg.JoinCode,
+		arg.Name,
+		arg.Description,
+	)
+	var i UpdateRoomRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,

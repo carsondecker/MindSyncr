@@ -18,3 +18,17 @@ type CreateRoomResponse struct {
 	JoinCode    string    `json:"join_code"`
 	CreatedAt   time.Time `json:"created_at"`
 }
+
+type Room struct {
+	Id          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	JoinCode    string    `json:"join_code"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type PatchRoomRequest struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+}

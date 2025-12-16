@@ -89,15 +89,15 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	utils.BaseHandlerFunc(h, w, r,
 		http.StatusCreated,
-		func(claims *utils.Claims) (RefreshTokenResponse, *utils.ServiceError) {
+		func() (RefreshTokenResponse, *utils.ServiceError) {
 			refreshToken, sErr := getRefreshToken(r)
 			if sErr != nil {
 				return RefreshTokenResponse{}, sErr
 			}
 
-			jwtToken, newRefreshToken, res, sErr := h.refreshService(r.Context(), claims.UserId, refreshToken)
+			jwtToken, newRefreshToken, res, sErr := h.refreshService(r.Context(), refreshToken)
 			if sErr != nil {
 				return RefreshTokenResponse{}, sErr
 			}

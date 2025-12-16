@@ -13,7 +13,7 @@ SET is_revoked = TRUE
 WHERE user_id = $1;
 
 -- name: CheckValidRefreshToken :one
-SELECT id
+SELECT user_id
 FROM refresh_tokens
 WHERE token_hash = $1
     AND is_revoked = FALSE

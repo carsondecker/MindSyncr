@@ -16,4 +16,14 @@ WHERE join_code = $1;
 -- name: GetRoomsByUser :many
 SELECT id, name, description, join_code, created_at, updated_at
 FROM rooms
-WHERE user_id = $1;
+WHERE owner_id = $1;
+
+-- name: UpdateRoom :one
+UPDATE rooms
+SET 
+    name = COALESCE(sqlc.narg(name), name),
+    description = COALESCE(sqlc.narg(description), description),
+    updated_at = NOW()
+WHERE owner_id = $1
+    AND join_code = $2
+RETURNING id, name, description, join_code, created_at, updated_at;

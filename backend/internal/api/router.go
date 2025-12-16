@@ -20,7 +20,7 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	authHandler := auth.NewAuthHandler(cfg)
 	authRouter.HandleFunc("POST /register", authHandler.HandleRegister)
 	authRouter.HandleFunc("POST /login", authHandler.HandleLogin)
-	authRouter.Handle("POST /refresh", utils.AuthMiddleware(http.HandlerFunc(authHandler.HandleRefresh)))
+	authRouter.HandleFunc("POST /refresh", authHandler.HandleRefresh)
 	authRouter.Handle("POST /logout", utils.AuthMiddleware(http.HandlerFunc(authHandler.HandleLogout)))
 
 	router.Handle("/auth/", http.StripPrefix("/auth", authRouter))
@@ -28,6 +28,8 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	roomsRouter := http.NewServeMux()
 	roomsHandler := rooms.NewRoomsHandler(cfg)
 	roomsRouter.Handle("POST /", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleCreateRoom)))
+	roomsRouter.Handle("GET /", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleGetRooms)))
+	roomsRouter.Handle("PATCH /{join_code}", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleUpdateRoom)))
 
 	router.Handle("/rooms/", http.StripPrefix("/rooms", roomsRouter))
 

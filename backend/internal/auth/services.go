@@ -127,7 +127,7 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 	return res, jwtToken, refreshToken, nil
 }
 
-func (h *AuthHandler) refreshService(ctx context.Context, userId uuid.UUID, token string) (string, string, RefreshTokenResponse, *utils.ServiceError) {
+func (h *AuthHandler) refreshService(ctx context.Context, token string) (string, string, RefreshTokenResponse, *utils.ServiceError) {
 	tx, err := h.cfg.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
@@ -141,17 +141,9 @@ func (h *AuthHandler) refreshService(ctx context.Context, userId uuid.UUID, toke
 
 	qtx := h.cfg.Queries.WithTx(tx)
 
-	isValid, sErr := isValidRefreshToken(ctx, qtx, token)
+	userId, sErr := isValidRefreshToken(ctx, qtx, token)
 	if sErr != nil {
 		return "", "", RefreshTokenResponse{}, sErr
-	}
-
-	if !isValid {
-		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
-			StatusCode: http.StatusUnauthorized,
-			Code:       utils.ErrInvalidRefreshToken,
-			Message:    "refresh token is invalid",
-		}
 	}
 
 	err = qtx.RevokeUserTokens(ctx, userId)
@@ -190,17 +182,9 @@ func (h *AuthHandler) refreshService(ctx context.Context, userId uuid.UUID, toke
 }
 
 func (h *AuthHandler) logoutService(ctx context.Context, userId uuid.UUID, token string) *utils.ServiceError {
-	isValid, sErr := isValidRefreshToken(ctx, h.cfg.Queries, token)
+	_, sErr := isValidRefreshToken(ctx, h.cfg.Queries, token)
 	if sErr != nil {
 		return sErr
-	}
-
-	if !isValid {
-		return &utils.ServiceError{
-			StatusCode: http.StatusUnauthorized,
-			Code:       utils.ErrInvalidRefreshToken,
-			Message:    "refresh token is invalid",
-		}
 	}
 
 	err := h.cfg.Queries.RevokeUserTokens(ctx, userId)
