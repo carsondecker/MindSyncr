@@ -10,10 +10,10 @@ import (
 	"github.com/lib/pq"
 )
 
-func (h *RoomsHandler) createRoomService(ctx context.Context, userId uuid.UUID, name, description string) (CreateRoomResponse, *utils.ServiceError) {
+func (h *RoomsHandler) createRoomService(ctx context.Context, userId uuid.UUID, name, description string) (Room, *utils.ServiceError) {
 	joinCode, err := createUniqueJoinCode(ctx, h.cfg.Queries)
 	if err != nil {
-		return CreateRoomResponse{}, &utils.ServiceError{
+		return Room{}, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
 			Code:       utils.ErrCreateJoinCodeFail,
 			Message:    err.Error(),
@@ -27,19 +27,21 @@ func (h *RoomsHandler) createRoomService(ctx context.Context, userId uuid.UUID, 
 		JoinCode:    joinCode,
 	})
 	if err != nil {
-		return CreateRoomResponse{}, &utils.ServiceError{
+		return Room{}, &utils.ServiceError{
 			StatusCode: http.StatusBadRequest,
 			Code:       utils.ErrDbtxFail,
 			Message:    err.Error(),
 		}
 	}
 
-	res := CreateRoomResponse{
+	res := Room{
 		Id:          row.ID,
+		OwnerId:     row.OwnerID,
 		Name:        row.Name,
 		Description: row.Description,
 		JoinCode:    row.JoinCode,
 		CreatedAt:   row.CreatedAt,
+		UpdatedAt:   row.UpdatedAt,
 	}
 
 	return res, nil
@@ -58,12 +60,13 @@ func (h *RoomsHandler) getOwnedRoomsService(ctx context.Context, userId uuid.UUI
 	rooms := make([]Room, 0)
 	for _, row := range rows {
 		rooms = append(rooms, Room{
-			row.ID,
-			row.Name,
-			row.Description,
-			row.JoinCode,
-			row.CreatedAt,
-			row.UpdatedAt,
+			Id:          row.ID,
+			OwnerId:     row.OwnerID,
+			Name:        row.Name,
+			Description: row.Description,
+			JoinCode:    row.JoinCode,
+			CreatedAt:   row.CreatedAt,
+			UpdatedAt:   row.UpdatedAt,
 		})
 	}
 
@@ -83,12 +86,13 @@ func (h *RoomsHandler) getJoinedRoomsService(ctx context.Context, userId uuid.UU
 	rooms := make([]Room, 0)
 	for _, row := range rows {
 		rooms = append(rooms, Room{
-			row.ID,
-			row.Name,
-			row.Description,
-			row.JoinCode,
-			row.CreatedAt,
-			row.UpdatedAt,
+			Id:          row.ID,
+			OwnerId:     row.OwnerID,
+			Name:        row.Name,
+			Description: row.Description,
+			JoinCode:    row.JoinCode,
+			CreatedAt:   row.CreatedAt,
+			UpdatedAt:   row.UpdatedAt,
 		})
 	}
 

@@ -23,7 +23,7 @@ func (h RoomsHandler) GetConfig() *utils.Config {
 func (h *RoomsHandler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
 		http.StatusCreated,
-		func(data CreateRoomRequest, claims *utils.Claims) (CreateRoomResponse, *utils.ServiceError) {
+		func(data CreateRoomRequest, claims *utils.Claims) (Room, *utils.ServiceError) {
 			return h.createRoomService(r.Context(), claims.UserId, data.Name, data.Description)
 		},
 	)

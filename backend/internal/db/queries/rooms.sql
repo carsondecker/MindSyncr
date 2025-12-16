@@ -6,7 +6,7 @@ VALUES (
     $3,
     $4
 )
-RETURNING id, name, description, join_code, created_at, updated_at;
+RETURNING id, owner_id, name, description, join_code, created_at, updated_at;
 
 -- name: CheckNewJoinCode :many
 SELECT id
@@ -14,12 +14,12 @@ FROM rooms
 WHERE join_code = $1;
 
 -- name: GetRoomsByUser :many
-SELECT id, name, description, join_code, created_at, updated_at
+SELECT id, owner_id, name, description, join_code, created_at, updated_at
 FROM rooms
 WHERE owner_id = $1;
 
 -- name: GetRoomsByMembership :many
-SELECT r.id, r.name, r.description, r.join_code, r.created_at, r.updated_at
+SELECT r.id, owner_id, r.name, r.description, r.join_code, r.created_at, r.updated_at
 FROM rooms r
 JOIN room_memberships rm
     ON rm.room_id = r.id
@@ -33,7 +33,7 @@ SET
     updated_at = NOW()
 WHERE owner_id = $1
     AND join_code = $2
-RETURNING id, name, description, join_code, created_at, updated_at;
+RETURNING id, owner_id, name, description, join_code, created_at, updated_at;
 
 -- name: DeleteRoom :exec
 DELETE FROM rooms

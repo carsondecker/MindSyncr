@@ -11,16 +11,9 @@ type CreateRoomRequest struct {
 	Description string `json:"description"`
 }
 
-type CreateRoomResponse struct {
-	Id          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	JoinCode    string    `json:"join_code"`
-	CreatedAt   time.Time `json:"created_at"`
-}
-
 type Room struct {
 	Id          uuid.UUID `json:"id"`
+	OwnerId     uuid.UUID `json:"owner_id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	JoinCode    string    `json:"join_code"`

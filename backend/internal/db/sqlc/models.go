@@ -5,6 +5,7 @@
 package sqlc
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,6 +34,18 @@ type RoomMembership struct {
 	UserID   uuid.UUID `json:"user_id"`
 	RoomID   uuid.UUID `json:"room_id"`
 	JoinedAt time.Time `json:"joined_at"`
+}
+
+type Session struct {
+	ID        uuid.UUID     `json:"id"`
+	RoomID    uuid.NullUUID `json:"room_id"`
+	OwnerID   uuid.NullUUID `json:"owner_id"`
+	Name      string        `json:"name"`
+	IsActive  sql.NullBool  `json:"is_active"`
+	StartedAt sql.NullTime  `json:"started_at"`
+	EndedAt   sql.NullTime  `json:"ended_at"`
+	CreatedAt time.Time     `json:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
 }
 
 type User struct {

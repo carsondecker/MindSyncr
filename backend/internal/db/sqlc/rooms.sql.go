@@ -8,7 +8,6 @@ package sqlc
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -59,33 +58,25 @@ func (q *Queries) DeleteRoom(ctx context.Context, arg DeleteRoomParams) error {
 }
 
 const getRoomsByMembership = `-- name: GetRoomsByMembership :many
-SELECT r.id, r.name, r.description, r.join_code, r.created_at, r.updated_at
+SELECT r.id, owner_id, r.name, r.description, r.join_code, r.created_at, r.updated_at
 FROM rooms r
 JOIN room_memberships rm
     ON rm.room_id = r.id
 WHERE rm.user_id = $1
 `
 
-type GetRoomsByMembershipRow struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	JoinCode    string    `json:"join_code"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-func (q *Queries) GetRoomsByMembership(ctx context.Context, userID uuid.UUID) ([]GetRoomsByMembershipRow, error) {
+func (q *Queries) GetRoomsByMembership(ctx context.Context, userID uuid.UUID) ([]Room, error) {
 	rows, err := q.db.QueryContext(ctx, getRoomsByMembership, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetRoomsByMembershipRow
+	var items []Room
 	for rows.Next() {
-		var i GetRoomsByMembershipRow
+		var i Room
 		if err := rows.Scan(
 			&i.ID,
+			&i.OwnerID,
 			&i.Name,
 			&i.Description,
 			&i.JoinCode,
@@ -106,31 +97,23 @@ func (q *Queries) GetRoomsByMembership(ctx context.Context, userID uuid.UUID) ([
 }
 
 const getRoomsByUser = `-- name: GetRoomsByUser :many
-SELECT id, name, description, join_code, created_at, updated_at
+SELECT id, owner_id, name, description, join_code, created_at, updated_at
 FROM rooms
 WHERE owner_id = $1
 `
 
-type GetRoomsByUserRow struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	JoinCode    string    `json:"join_code"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-func (q *Queries) GetRoomsByUser(ctx context.Context, ownerID uuid.UUID) ([]GetRoomsByUserRow, error) {
+func (q *Queries) GetRoomsByUser(ctx context.Context, ownerID uuid.UUID) ([]Room, error) {
 	rows, err := q.db.QueryContext(ctx, getRoomsByUser, ownerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetRoomsByUserRow
+	var items []Room
 	for rows.Next() {
-		var i GetRoomsByUserRow
+		var i Room
 		if err := rows.Scan(
 			&i.ID,
+			&i.OwnerID,
 			&i.Name,
 			&i.Description,
 			&i.JoinCode,
@@ -158,7 +141,7 @@ VALUES (
     $3,
     $4
 )
-RETURNING id, name, description, join_code, created_at, updated_at
+RETURNING id, owner_id, name, description, join_code, created_at, updated_at
 `
 
 type InsertRoomParams struct {
@@ -168,25 +151,17 @@ type InsertRoomParams struct {
 	JoinCode    string    `json:"join_code"`
 }
 
-type InsertRoomRow struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	JoinCode    string    `json:"join_code"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-func (q *Queries) InsertRoom(ctx context.Context, arg InsertRoomParams) (InsertRoomRow, error) {
+func (q *Queries) InsertRoom(ctx context.Context, arg InsertRoomParams) (Room, error) {
 	row := q.db.QueryRowContext(ctx, insertRoom,
 		arg.OwnerID,
 		arg.Name,
 		arg.Description,
 		arg.JoinCode,
 	)
-	var i InsertRoomRow
+	var i Room
 	err := row.Scan(
 		&i.ID,
+		&i.OwnerID,
 		&i.Name,
 		&i.Description,
 		&i.JoinCode,
@@ -204,7 +179,7 @@ SET
     updated_at = NOW()
 WHERE owner_id = $1
     AND join_code = $2
-RETURNING id, name, description, join_code, created_at, updated_at
+RETURNING id, owner_id, name, description, join_code, created_at, updated_at
 `
 
 type UpdateRoomParams struct {
@@ -214,25 +189,17 @@ type UpdateRoomParams struct {
 	Description sql.NullString `json:"description"`
 }
 
-type UpdateRoomRow struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	JoinCode    string    `json:"join_code"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) (UpdateRoomRow, error) {
+func (q *Queries) UpdateRoom(ctx context.Context, arg UpdateRoomParams) (Room, error) {
 	row := q.db.QueryRowContext(ctx, updateRoom,
 		arg.OwnerID,
 		arg.JoinCode,
 		arg.Name,
 		arg.Description,
 	)
-	var i UpdateRoomRow
+	var i Room
 	err := row.Scan(
 		&i.ID,
+		&i.OwnerID,
 		&i.Name,
 		&i.Description,
 		&i.JoinCode,
