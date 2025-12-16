@@ -18,6 +18,13 @@ SELECT id, name, description, join_code, created_at, updated_at
 FROM rooms
 WHERE owner_id = $1;
 
+-- name: GetRoomsByMembership :many
+SELECT r.id, r.name, r.description, r.join_code, r.created_at, r.updated_at
+FROM rooms r
+JOIN room_memberships rm
+    ON rm.room_id = r.id
+WHERE rm.user_id = $1;
+
 -- name: UpdateRoom :one
 UPDATE rooms
 SET 

@@ -58,6 +58,53 @@ func (q *Queries) DeleteRoom(ctx context.Context, arg DeleteRoomParams) error {
 	return err
 }
 
+const getRoomsByMembership = `-- name: GetRoomsByMembership :many
+SELECT r.id, r.name, r.description, r.join_code, r.created_at, r.updated_at
+FROM rooms r
+JOIN room_memberships rm
+    ON rm.room_id = r.id
+WHERE rm.user_id = $1
+`
+
+type GetRoomsByMembershipRow struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	JoinCode    string    `json:"join_code"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+func (q *Queries) GetRoomsByMembership(ctx context.Context, userID uuid.UUID) ([]GetRoomsByMembershipRow, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomsByMembership, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRoomsByMembershipRow
+	for rows.Next() {
+		var i GetRoomsByMembershipRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.JoinCode,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRoomsByUser = `-- name: GetRoomsByUser :many
 SELECT id, name, description, join_code, created_at, updated_at
 FROM rooms

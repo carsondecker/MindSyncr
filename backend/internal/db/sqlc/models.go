@@ -29,6 +29,12 @@ type Room struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+type RoomMembership struct {
+	UserID   uuid.UUID `json:"user_id"`
+	RoomID   uuid.UUID `json:"room_id"`
+	JoinedAt time.Time `json:"joined_at"`
+}
+
 type User struct {
 	ID              uuid.UUID `json:"id"`
 	Email           string    `json:"email"`

@@ -7,6 +7,7 @@ import (
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 	"github.com/carsondecker/MindSyncr/internal/utils"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 func (h *RoomsHandler) createRoomService(ctx context.Context, userId uuid.UUID, name, description string) (CreateRoomResponse, *utils.ServiceError) {
@@ -44,8 +45,33 @@ func (h *RoomsHandler) createRoomService(ctx context.Context, userId uuid.UUID, 
 	return res, nil
 }
 
-func (h *RoomsHandler) getRoomsService(ctx context.Context, userId uuid.UUID) ([]Room, *utils.ServiceError) {
+func (h *RoomsHandler) getOwnedRoomsService(ctx context.Context, userId uuid.UUID) ([]Room, *utils.ServiceError) {
 	rows, err := h.cfg.Queries.GetRoomsByUser(ctx, userId)
+	if err != nil {
+		return nil, &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	rooms := make([]Room, 0)
+	for _, row := range rows {
+		rooms = append(rooms, Room{
+			row.ID,
+			row.Name,
+			row.Description,
+			row.JoinCode,
+			row.CreatedAt,
+			row.UpdatedAt,
+		})
+	}
+
+	return rooms, nil
+}
+
+func (h *RoomsHandler) getJoinedRoomsService(ctx context.Context, userId uuid.UUID) ([]Room, *utils.ServiceError) {
+	rows, err := h.cfg.Queries.GetRoomsByMembership(ctx, userId)
 	if err != nil {
 		return nil, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
@@ -99,6 +125,48 @@ func (h *RoomsHandler) updateRoomsService(ctx context.Context, userId uuid.UUID,
 func (h *RoomsHandler) deleteRoomService(ctx context.Context, userId uuid.UUID, joinCode string) *utils.ServiceError {
 	err := h.cfg.Queries.DeleteRoom(ctx, sqlc.DeleteRoomParams{
 		OwnerID:  userId,
+		JoinCode: joinCode,
+	})
+	if err != nil {
+		return &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	return nil
+}
+
+// TODO: make it so you can't join your own session
+func (h *RoomsHandler) joinRoomService(ctx context.Context, userId uuid.UUID, joinCode string) *utils.ServiceError {
+	err := h.cfg.Queries.JoinRoom(ctx, sqlc.JoinRoomParams{
+		UserID:   userId,
+		JoinCode: joinCode,
+	})
+	if err != nil {
+		if pgErr, ok := err.(*pq.Error); ok {
+			if pgErr.Code == "23505" {
+				return &utils.ServiceError{
+					StatusCode: http.StatusBadRequest,
+					Code:       utils.ErrUserAlreadyExists,
+					Message:    "this user has already joined this room",
+				}
+			}
+		}
+		return &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	return nil
+}
+
+func (h *RoomsHandler) leaveRoomService(ctx context.Context, userId uuid.UUID, joinCode string) *utils.ServiceError {
+	err := h.cfg.Queries.LeaveRoom(ctx, sqlc.LeaveRoomParams{
+		UserID:   userId,
 		JoinCode: joinCode,
 	})
 	if err != nil {
