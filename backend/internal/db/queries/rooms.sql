@@ -27,3 +27,8 @@ SET
 WHERE owner_id = $1
     AND join_code = $2
 RETURNING id, name, description, join_code, created_at, updated_at;
+
+-- name: DeleteRoom :exec
+DELETE FROM rooms
+WHERE owner_id = $1
+    AND join_code = $2;

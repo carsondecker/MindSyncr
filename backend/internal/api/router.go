@@ -30,6 +30,7 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	roomsRouter.Handle("POST /", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleCreateRoom)))
 	roomsRouter.Handle("GET /", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleGetRooms)))
 	roomsRouter.Handle("PATCH /{join_code}", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleUpdateRoom)))
+	roomsRouter.Handle("DELETE /{join_code}", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleDeleteRoom)))
 
 	router.Handle("/rooms/", http.StripPrefix("/rooms", roomsRouter))
 

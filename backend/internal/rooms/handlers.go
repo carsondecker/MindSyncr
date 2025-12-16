@@ -45,8 +45,9 @@ func (h *RoomsHandler) HandleUpdateRoom(w http.ResponseWriter, r *http.Request) 
 			joinCode := r.PathValue("join_code")
 			if joinCode == "" || len(joinCode) != JoinCodeLength {
 				return Room{}, &utils.ServiceError{
-					StatusCode: http.StatusInternalServerError,
+					StatusCode: http.StatusUnprocessableEntity,
 					Code:       utils.ErrValidationFailed,
+					Message:    "failed to get join code",
 				}
 			}
 
@@ -56,6 +57,29 @@ func (h *RoomsHandler) HandleUpdateRoom(w http.ResponseWriter, r *http.Request) 
 			}
 
 			return res, nil
+		},
+	)
+}
+
+func (h *RoomsHandler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) {
+	utils.BaseHandlerFuncWithClaims(h, w, r,
+		http.StatusOK,
+		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
+			joinCode := r.PathValue("join_code")
+			if joinCode == "" || len(joinCode) != JoinCodeLength {
+				return struct{}{}, &utils.ServiceError{
+					StatusCode: http.StatusUnprocessableEntity,
+					Code:       utils.ErrValidationFailed,
+					Message:    "failed to get join code",
+				}
+			}
+
+			sErr := h.deleteRoomService(r.Context(), claims.UserId, joinCode)
+			if sErr != nil {
+				return struct{}{}, sErr
+			}
+
+			return struct{}{}, nil
 		},
 	)
 }

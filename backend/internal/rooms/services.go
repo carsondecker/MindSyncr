@@ -95,3 +95,19 @@ func (h *RoomsHandler) updateRoomsService(ctx context.Context, userId uuid.UUID,
 
 	return res, nil
 }
+
+func (h *RoomsHandler) deleteRoomService(ctx context.Context, userId uuid.UUID, joinCode string) *utils.ServiceError {
+	err := h.cfg.Queries.DeleteRoom(ctx, sqlc.DeleteRoomParams{
+		OwnerID:  userId,
+		JoinCode: joinCode,
+	})
+	if err != nil {
+		return &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	return nil
+}

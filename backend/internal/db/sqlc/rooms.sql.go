@@ -42,6 +42,22 @@ func (q *Queries) CheckNewJoinCode(ctx context.Context, joinCode string) ([]uuid
 	return items, nil
 }
 
+const deleteRoom = `-- name: DeleteRoom :exec
+DELETE FROM rooms
+WHERE owner_id = $1
+    AND join_code = $2
+`
+
+type DeleteRoomParams struct {
+	OwnerID  uuid.UUID `json:"owner_id"`
+	JoinCode string    `json:"join_code"`
+}
+
+func (q *Queries) DeleteRoom(ctx context.Context, arg DeleteRoomParams) error {
+	_, err := q.db.ExecContext(ctx, deleteRoom, arg.OwnerID, arg.JoinCode)
+	return err
+}
+
 const getRoomsByUser = `-- name: GetRoomsByUser :many
 SELECT id, name, description, join_code, created_at, updated_at
 FROM rooms
