@@ -64,13 +64,9 @@ func (h *RoomsHandler) HandleUpdateRoom(w http.ResponseWriter, r *http.Request) 
 	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
 		http.StatusOK,
 		func(data PatchRoomRequest, claims *utils.Claims) (Room, *utils.ServiceError) {
-			joinCode := r.PathValue("join_code")
-			if joinCode == "" || len(joinCode) != JoinCodeLength {
-				return Room{}, &utils.ServiceError{
-					StatusCode: http.StatusUnprocessableEntity,
-					Code:       utils.ErrValidationFailed,
-					Message:    "failed to get join code",
-				}
+			joinCode, sErr := utils.GetPathValue(r, "join_code")
+			if sErr != nil {
+				return Room{}, sErr
 			}
 
 			res, sErr := h.updateRoomsService(r.Context(), claims.UserId, joinCode, data)

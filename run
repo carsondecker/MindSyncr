@@ -3,6 +3,12 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+cd "$SCRIPT_DIR"
+
 if [[ "$1" == "start" ]]; then
     bash ./scripts/start.sh
+fi
+
+if [[ "$1" == "generate-sqlc" ]]; then
+    bash ./scripts/generate-sqlc.sh
 fi

@@ -48,7 +48,7 @@ func (h *RoomsHandler) createRoomService(ctx context.Context, userId uuid.UUID, 
 }
 
 func (h *RoomsHandler) getOwnedRoomsService(ctx context.Context, userId uuid.UUID) ([]Room, *utils.ServiceError) {
-	rows, err := h.cfg.Queries.GetRoomsByUser(ctx, userId)
+	rows, err := h.cfg.Queries.GetRoomsByOwner(ctx, userId)
 	if err != nil {
 		return nil, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
@@ -103,8 +103,8 @@ func (h *RoomsHandler) updateRoomsService(ctx context.Context, userId uuid.UUID,
 	row, err := h.cfg.Queries.UpdateRoom(ctx, sqlc.UpdateRoomParams{
 		OwnerID:     userId,
 		JoinCode:    joinCode,
-		Name:        NewNullString(data.Name),
-		Description: NewNullString(data.Description),
+		Name:        utils.NewNullString(data.Name),
+		Description: utils.NewNullString(data.Description),
 	})
 	if err != nil {
 		return Room{}, &utils.ServiceError{
@@ -142,9 +142,24 @@ func (h *RoomsHandler) deleteRoomService(ctx context.Context, userId uuid.UUID, 
 	return nil
 }
 
-// TODO: make it so you can't join your own session
 func (h *RoomsHandler) joinRoomService(ctx context.Context, userId uuid.UUID, joinCode string) *utils.ServiceError {
-	err := h.cfg.Queries.JoinRoom(ctx, sqlc.JoinRoomParams{
+	ownerId, err := h.cfg.Queries.GetRoomOwnerIdByJoinCode(ctx, joinCode)
+	if err != nil {
+		return &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+	if userId == ownerId {
+		return &utils.ServiceError{
+			StatusCode: http.StatusForbidden,
+			Code:       utils.ErrForbidden,
+			Message:    "users cannot join a room they own",
+		}
+	}
+
+	err = h.cfg.Queries.JoinRoom(ctx, sqlc.JoinRoomParams{
 		UserID:   userId,
 		JoinCode: joinCode,
 	})
