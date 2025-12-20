@@ -25,12 +25,12 @@ services:
       GOOSE_DRIVER: postgres
       GOOSE_DBSTRING: host=db port=5432 user=postgres password=postgres dbname=MindSyncr sslmode=disable
     volumes:
-      - ./backend/internal/db/migrations:/migrations
+      - ./backend/api-gateway/internal/db/migrations:/migrations
     restart: "no"
 
   backend:
     build:
-      context: ./backend
+      context: ./backend/api-gateway
       dockerfile: Dockerfile
       args:
         ENV: ${ENV:-development}
@@ -39,21 +39,25 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
+    env_file:
+    - ./backend/api-gateway/.env
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/MindSyncr?sslmode=disable
     ports:
       - "3000:3000"
     develop:
       watch:
-      - action: sync+restart
-        path: ./backend
-        target: /usr/src/app
-      
-      - action: rebuild
-        path: ./backend/go.mod
-      
-      - action: rebuild
-        path: ./backend/go.sum
+        - action: rebuild
+          path: ./backend/api-gateway/go.mod
+        
+        - action: rebuild
+          path: ./backend/api-gateway/go.sum
+        
+        - action: rebuild
+          path: ./backend/api-gateway
+          ignore:
+            - ./backend/api-gateway/tmp/
+            - ./backend/api-gateway/*.log
 
 volumes:
   db_data:

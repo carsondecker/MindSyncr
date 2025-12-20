@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+if [[ "$1" == "start" ]]; then
+    bash ./scripts/start.sh
+fi

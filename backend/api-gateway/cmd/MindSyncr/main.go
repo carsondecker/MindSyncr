@@ -17,10 +17,10 @@ import (
 
 func main() {
 	log.SetOutput(os.Stdout)
-	log.Println("Started MindSyncr Backend.")
+	log.Println("Started MindSyncr API gateway.")
 
 	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: Error loading .env file: %v", err)
+		log.Fatalf("Build failed: Error loading .env file: %v", err)
 	}
 
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
@@ -42,6 +42,8 @@ func main() {
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
+
+	log.Println("Build succeeded, starting MindSyncr server...")
 
 	log.Fatal(srv.ListenAndServe())
 }
