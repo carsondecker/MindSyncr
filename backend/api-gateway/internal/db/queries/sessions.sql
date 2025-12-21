@@ -19,8 +19,11 @@ WHERE id = $1;
 UPDATE sessions
 SET is_active = FALSE,
     ended_at = NOW(),
-    updated_at = NOW();
+    updated_at = NOW()
+WHERE owner_id = $1
+    AND id = $2;
 
 -- name: DeleteSession :exec
 DELETE FROM sessions
-WHERE id = $1;
+WHERE owner_id = $1
+    AND id = $2;

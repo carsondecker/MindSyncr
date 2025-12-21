@@ -13,11 +13,17 @@ import (
 
 const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM sessions
-WHERE id = $1
+WHERE owner_id = $1
+    AND id = $2
 `
 
-func (q *Queries) DeleteSession(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteSession, id)
+type DeleteSessionParams struct {
+	OwnerID uuid.UUID `json:"owner_id"`
+	ID      uuid.UUID `json:"id"`
+}
+
+func (q *Queries) DeleteSession(ctx context.Context, arg DeleteSessionParams) error {
+	_, err := q.db.ExecContext(ctx, deleteSession, arg.OwnerID, arg.ID)
 	return err
 }
 
@@ -26,10 +32,17 @@ UPDATE sessions
 SET is_active = FALSE,
     ended_at = NOW(),
     updated_at = NOW()
+WHERE owner_id = $1
+    AND id = $2
 `
 
-func (q *Queries) EndSession(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, endSession)
+type EndSessionParams struct {
+	OwnerID uuid.UUID `json:"owner_id"`
+	ID      uuid.UUID `json:"id"`
+}
+
+func (q *Queries) EndSession(ctx context.Context, arg EndSessionParams) error {
+	_, err := q.db.ExecContext(ctx, endSession, arg.OwnerID, arg.ID)
 	return err
 }
 

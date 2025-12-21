@@ -1,8 +1,8 @@
 -- +goose Up
 CREATE TABLE sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    room_id UUID NOT NULL REFERENCES rooms(id),
-    owner_id UUID NOT NULL REFERENCES users(id),
+    room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

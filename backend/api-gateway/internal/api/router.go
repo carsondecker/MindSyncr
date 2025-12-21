@@ -55,8 +55,25 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	dependentSessionsRouter.Handle("POST /", utils.AuthMiddleware(
 		middlewareHandler.CheckRoomOwnership(http.HandlerFunc(sessionsHandler.HandleCreateSession)),
 	))
+	dependentSessionsRouter.Handle("GET /", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomMembership(http.HandlerFunc(sessionsHandler.HandleGetSessions)),
+	))
 
 	roomsRouter.Handle("/{room_id}/sessions/", http.StripPrefix("/{room_id}/sessions", dependentSessionsRouter))
+
+	sessionsRouter := http.NewServeMux()
+
+	sessionsRouter.Handle("GET /{session_id}", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomMembership(http.HandlerFunc(sessionsHandler.HandleGetSession)),
+	))
+	sessionsRouter.Handle("DELETE /{session_id}", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomMembership(http.HandlerFunc(sessionsHandler.HandleEndSession)),
+	))
+	sessionsRouter.Handle("POST /{session_id}/end", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomMembership(http.HandlerFunc(sessionsHandler.HandleEndSession)),
+	))
+
+	router.Handle("/sessions/", http.StripPrefix("/sessions", sessionsRouter))
 
 	return baseRouter
 }

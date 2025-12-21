@@ -91,3 +91,35 @@ func (h *SessionsHandler) getSessionService(ctx context.Context, sessionId uuid.
 
 	return res, nil
 }
+
+func (h *SessionsHandler) endSessionService(ctx context.Context, userId, sessionId uuid.UUID) *utils.ServiceError {
+	err := h.cfg.Queries.EndSession(ctx, sqlc.EndSessionParams{
+		OwnerID: userId,
+		ID:      sessionId,
+	})
+	if err != nil {
+		return &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	return nil
+}
+
+func (h *SessionsHandler) deleteSessionService(ctx context.Context, userId, sessionId uuid.UUID) *utils.ServiceError {
+	err := h.cfg.Queries.DeleteSession(ctx, sqlc.DeleteSessionParams{
+		OwnerID: userId,
+		ID:      sessionId,
+	})
+	if err != nil {
+		return &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	return nil
+}

@@ -76,3 +76,41 @@ func (h *SessionsHandler) HandleGetSession(w http.ResponseWriter, r *http.Reques
 		},
 	)
 }
+
+func (h *SessionsHandler) HandleEndSession(w http.ResponseWriter, r *http.Request) {
+	utils.BaseHandlerFuncWithClaims(h, w, r,
+		http.StatusOK,
+		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
+			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
+			if sErr != nil {
+				return struct{}{}, sErr
+			}
+
+			sErr = h.endSessionService(r.Context(), claims.UserId, sessionId)
+			if sErr != nil {
+				return struct{}{}, sErr
+			}
+
+			return struct{}{}, nil
+		},
+	)
+}
+
+func (h *SessionsHandler) HandleDeleteSession(w http.ResponseWriter, r *http.Request) {
+	utils.BaseHandlerFuncWithClaims(h, w, r,
+		http.StatusOK,
+		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
+			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
+			if sErr != nil {
+				return struct{}{}, sErr
+			}
+
+			sErr = h.deleteSessionService(r.Context(), claims.UserId, sessionId)
+			if sErr != nil {
+				return struct{}{}, sErr
+			}
+
+			return struct{}{}, nil
+		},
+	)
+}
