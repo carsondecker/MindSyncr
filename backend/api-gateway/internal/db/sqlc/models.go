@@ -42,7 +42,7 @@ type Session struct {
 	OwnerID   uuid.UUID    `json:"owner_id"`
 	Name      string       `json:"name"`
 	IsActive  bool         `json:"is_active"`
-	StartedAt sql.NullTime `json:"started_at"`
+	StartedAt time.Time    `json:"started_at"`
 	EndedAt   sql.NullTime `json:"ended_at"`
 	CreatedAt time.Time    `json:"created_at"`
 	UpdatedAt time.Time    `json:"updated_at"`

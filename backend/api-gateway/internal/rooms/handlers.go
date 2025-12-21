@@ -60,16 +60,35 @@ func (h *RoomsHandler) HandleGetJoinedRooms(w http.ResponseWriter, r *http.Reque
 	)
 }
 
-func (h *RoomsHandler) HandleUpdateRoom(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
+func (h *RoomsHandler) HandleGetRoom(w http.ResponseWriter, r *http.Request) {
+	utils.BaseHandlerFunc(h, w, r,
 		http.StatusOK,
-		func(data PatchRoomRequest, claims *utils.Claims) (Room, *utils.ServiceError) {
-			joinCode, sErr := utils.GetPathValue(r, "join_code")
+		func() (Room, *utils.ServiceError) {
+			roomId, sErr := utils.GetRoomIdFromPath(r)
 			if sErr != nil {
 				return Room{}, sErr
 			}
 
-			res, sErr := h.updateRoomsService(r.Context(), claims.UserId, joinCode, data)
+			res, sErr := h.getRoomService(r.Context(), roomId)
+			if sErr != nil {
+				return Room{}, sErr
+			}
+
+			return res, nil
+		},
+	)
+}
+
+func (h *RoomsHandler) HandleUpdateRoom(w http.ResponseWriter, r *http.Request) {
+	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
+		http.StatusOK,
+		func(data PatchRoomRequest, claims *utils.Claims) (Room, *utils.ServiceError) {
+			roomId, sErr := utils.GetRoomIdFromPath(r)
+			if sErr != nil {
+				return Room{}, sErr
+			}
+
+			res, sErr := h.updateRoomsService(r.Context(), claims.UserId, roomId, data)
 			if sErr != nil {
 				return Room{}, sErr
 			}
@@ -83,16 +102,12 @@ func (h *RoomsHandler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) 
 	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
-			joinCode := r.PathValue("join_code")
-			if joinCode == "" || len(joinCode) != JoinCodeLength {
-				return struct{}{}, &utils.ServiceError{
-					StatusCode: http.StatusUnprocessableEntity,
-					Code:       utils.ErrValidationFailed,
-					Message:    "failed to get join code",
-				}
+			roomId, sErr := utils.GetRoomIdFromPath(r)
+			if sErr != nil {
+				return struct{}{}, sErr
 			}
 
-			sErr := h.deleteRoomService(r.Context(), claims.UserId, joinCode)
+			sErr = h.deleteRoomService(r.Context(), claims.UserId, roomId)
 			if sErr != nil {
 				return struct{}{}, sErr
 			}
@@ -105,22 +120,18 @@ func (h *RoomsHandler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) 
 func (h *RoomsHandler) HandleJoinRoom(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
-		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
-			joinCode := r.PathValue("join_code")
-			if joinCode == "" || len(joinCode) != JoinCodeLength {
-				return struct{}{}, &utils.ServiceError{
-					StatusCode: http.StatusUnprocessableEntity,
-					Code:       utils.ErrValidationFailed,
-					Message:    "failed to get join code",
-				}
-			}
-
-			sErr := h.joinRoomService(r.Context(), claims.UserId, joinCode)
+		func(claims *utils.Claims) (JoinRoomResponse, *utils.ServiceError) {
+			joinCode, sErr := utils.GetPathValue(r, "join_code")
 			if sErr != nil {
-				return struct{}{}, sErr
+				return JoinRoomResponse{}, sErr
 			}
 
-			return struct{}{}, nil
+			res, sErr := h.joinRoomService(r.Context(), claims.UserId, joinCode)
+			if sErr != nil {
+				return JoinRoomResponse{}, sErr
+			}
+
+			return res, nil
 		},
 	)
 }
@@ -129,16 +140,12 @@ func (h *RoomsHandler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
-			joinCode := r.PathValue("join_code")
-			if joinCode == "" || len(joinCode) != JoinCodeLength {
-				return struct{}{}, &utils.ServiceError{
-					StatusCode: http.StatusUnprocessableEntity,
-					Code:       utils.ErrValidationFailed,
-					Message:    "failed to get join code",
-				}
+			roomId, sErr := utils.GetRoomIdFromPath(r)
+			if sErr != nil {
+				return struct{}{}, sErr
 			}
 
-			sErr := h.leaveRoomService(r.Context(), claims.UserId, joinCode)
+			sErr = h.leaveRoomService(r.Context(), claims.UserId, roomId)
 			if sErr != nil {
 				return struct{}{}, sErr
 			}

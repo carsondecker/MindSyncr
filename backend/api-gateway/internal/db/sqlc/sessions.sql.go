@@ -7,7 +7,6 @@ package sqlc
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -34,7 +33,7 @@ func (q *Queries) EndSession(ctx context.Context) error {
 	return err
 }
 
-const getSessions = `-- name: GetSessions :many
+const getSessionsForOwner = `-- name: GetSessionsForOwner :many
 SELECT s.id, s.room_id, s.owner_id, s.name, s.is_active, s.started_at, s.ended_at, s.created_at, s.updated_at
 FROM sessions s
 JOIN rooms r
@@ -43,13 +42,13 @@ WHERE s.owner_id = $1
     AND r.join_code = $2
 `
 
-type GetSessionsParams struct {
+type GetSessionsForOwnerParams struct {
 	OwnerID  uuid.UUID `json:"owner_id"`
 	JoinCode string    `json:"join_code"`
 }
 
-func (q *Queries) GetSessions(ctx context.Context, arg GetSessionsParams) ([]Session, error) {
-	rows, err := q.db.QueryContext(ctx, getSessions, arg.OwnerID, arg.JoinCode)
+func (q *Queries) GetSessionsForOwner(ctx context.Context, arg GetSessionsForOwnerParams) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, getSessionsForOwner, arg.OwnerID, arg.JoinCode)
 	if err != nil {
 		return nil, err
 	}
@@ -85,49 +84,29 @@ const insertSession = `-- name: InsertSession :one
 INSERT INTO sessions (owner_id, room_id, name) 
 SELECT $1, r.id, $3
 FROM rooms r
-WHERE join_code = $2
-RETURNING id, room_id, owner_id, name, is_active, created_at, updated_at
+WHERE room_id = $2
+RETURNING id, room_id, owner_id, name, is_active, started_at, ended_at, created_at, updated_at
 `
 
 type InsertSessionParams struct {
-	OwnerID  uuid.UUID `json:"owner_id"`
-	JoinCode string    `json:"join_code"`
-	Name     string    `json:"name"`
+	OwnerID uuid.UUID `json:"owner_id"`
+	RoomID  uuid.UUID `json:"room_id"`
+	Name    string    `json:"name"`
 }
 
-type InsertSessionRow struct {
-	ID        uuid.UUID `json:"id"`
-	RoomID    uuid.UUID `json:"room_id"`
-	OwnerID   uuid.UUID `json:"owner_id"`
-	Name      string    `json:"name"`
-	IsActive  bool      `json:"is_active"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (q *Queries) InsertSession(ctx context.Context, arg InsertSessionParams) (InsertSessionRow, error) {
-	row := q.db.QueryRowContext(ctx, insertSession, arg.OwnerID, arg.JoinCode, arg.Name)
-	var i InsertSessionRow
+func (q *Queries) InsertSession(ctx context.Context, arg InsertSessionParams) (Session, error) {
+	row := q.db.QueryRowContext(ctx, insertSession, arg.OwnerID, arg.RoomID, arg.Name)
+	var i Session
 	err := row.Scan(
 		&i.ID,
 		&i.RoomID,
 		&i.OwnerID,
 		&i.Name,
 		&i.IsActive,
+		&i.StartedAt,
+		&i.EndedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const startSession = `-- name: StartSession :exec
-UPDATE sessions
-SET is_active = TRUE,
-    started_at = NOW(),
-    updated_at = NOW()
-`
-
-func (q *Queries) StartSession(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, startSession)
-	return err
 }

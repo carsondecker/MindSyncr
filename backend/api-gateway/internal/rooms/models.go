@@ -25,3 +25,7 @@ type PatchRoomRequest struct {
 	Name        *string `json:"name"`
 	Description *string `json:"description"`
 }
+
+type JoinRoomResponse struct {
+	RoomId uuid.UUID `json:"room_id"`
+}

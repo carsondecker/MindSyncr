@@ -99,10 +99,32 @@ func (h *RoomsHandler) getJoinedRoomsService(ctx context.Context, userId uuid.UU
 	return rooms, nil
 }
 
-func (h *RoomsHandler) updateRoomsService(ctx context.Context, userId uuid.UUID, joinCode string, data PatchRoomRequest) (Room, *utils.ServiceError) {
+func (h *RoomsHandler) getRoomService(ctx context.Context, roomId uuid.UUID) (Room, *utils.ServiceError) {
+	row, err := h.cfg.Queries.GetRoomById(ctx, roomId)
+	if err != nil {
+		return Room{}, &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	res := Room{
+		Id:          row.ID,
+		Name:        row.Name,
+		Description: row.Description,
+		JoinCode:    row.JoinCode,
+		CreatedAt:   row.CreatedAt,
+		UpdatedAt:   row.UpdatedAt,
+	}
+
+	return res, nil
+}
+
+func (h *RoomsHandler) updateRoomsService(ctx context.Context, userId, roomId uuid.UUID, data PatchRoomRequest) (Room, *utils.ServiceError) {
 	row, err := h.cfg.Queries.UpdateRoom(ctx, sqlc.UpdateRoomParams{
 		OwnerID:     userId,
-		JoinCode:    joinCode,
+		ID:          roomId,
 		Name:        utils.NewNullString(data.Name),
 		Description: utils.NewNullString(data.Description),
 	})
@@ -126,10 +148,10 @@ func (h *RoomsHandler) updateRoomsService(ctx context.Context, userId uuid.UUID,
 	return res, nil
 }
 
-func (h *RoomsHandler) deleteRoomService(ctx context.Context, userId uuid.UUID, joinCode string) *utils.ServiceError {
+func (h *RoomsHandler) deleteRoomService(ctx context.Context, userId, roomId uuid.UUID) *utils.ServiceError {
 	err := h.cfg.Queries.DeleteRoom(ctx, sqlc.DeleteRoomParams{
-		OwnerID:  userId,
-		JoinCode: joinCode,
+		OwnerID: userId,
+		ID:      roomId,
 	})
 	if err != nil {
 		return &utils.ServiceError{
@@ -142,51 +164,55 @@ func (h *RoomsHandler) deleteRoomService(ctx context.Context, userId uuid.UUID, 
 	return nil
 }
 
-func (h *RoomsHandler) joinRoomService(ctx context.Context, userId uuid.UUID, joinCode string) *utils.ServiceError {
+func (h *RoomsHandler) joinRoomService(ctx context.Context, userId uuid.UUID, joinCode string) (JoinRoomResponse, *utils.ServiceError) {
 	ownerId, err := h.cfg.Queries.GetRoomOwnerIdByJoinCode(ctx, joinCode)
 	if err != nil {
-		return &utils.ServiceError{
+		return JoinRoomResponse{}, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
 			Code:       utils.ErrDbtxFail,
 			Message:    err.Error(),
 		}
 	}
 	if userId == ownerId {
-		return &utils.ServiceError{
+		return JoinRoomResponse{}, &utils.ServiceError{
 			StatusCode: http.StatusForbidden,
 			Code:       utils.ErrForbidden,
 			Message:    "users cannot join a room they own",
 		}
 	}
 
-	err = h.cfg.Queries.JoinRoom(ctx, sqlc.JoinRoomParams{
+	roomId, err := h.cfg.Queries.JoinRoom(ctx, sqlc.JoinRoomParams{
 		UserID:   userId,
 		JoinCode: joinCode,
 	})
 	if err != nil {
 		if pgErr, ok := err.(*pq.Error); ok {
 			if pgErr.Code == "23505" {
-				return &utils.ServiceError{
+				return JoinRoomResponse{}, &utils.ServiceError{
 					StatusCode: http.StatusBadRequest,
 					Code:       utils.ErrUserAlreadyExists,
 					Message:    "this user has already joined this room",
 				}
 			}
 		}
-		return &utils.ServiceError{
+		return JoinRoomResponse{}, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
 			Code:       utils.ErrDbtxFail,
 			Message:    err.Error(),
 		}
 	}
 
-	return nil
+	res := JoinRoomResponse{
+		RoomId: roomId,
+	}
+
+	return res, nil
 }
 
-func (h *RoomsHandler) leaveRoomService(ctx context.Context, userId uuid.UUID, joinCode string) *utils.ServiceError {
+func (h *RoomsHandler) leaveRoomService(ctx context.Context, userId, roomId uuid.UUID) *utils.ServiceError {
 	err := h.cfg.Queries.LeaveRoom(ctx, sqlc.LeaveRoomParams{
-		UserID:   userId,
-		JoinCode: joinCode,
+		UserID: userId,
+		RoomID: roomId,
 	})
 	if err != nil {
 		return &utils.ServiceError{

@@ -11,11 +11,12 @@ import (
 	"github.com/google/uuid"
 )
 
-const joinRoom = `-- name: JoinRoom :exec
+const joinRoom = `-- name: JoinRoom :one
 INSERT INTO room_memberships (user_id, room_id)
 SELECT $1, id
 FROM rooms
 WHERE join_code = $2
+RETURNING room_id
 `
 
 type JoinRoomParams struct {
@@ -23,24 +24,25 @@ type JoinRoomParams struct {
 	JoinCode string    `json:"join_code"`
 }
 
-func (q *Queries) JoinRoom(ctx context.Context, arg JoinRoomParams) error {
-	_, err := q.db.ExecContext(ctx, joinRoom, arg.UserID, arg.JoinCode)
-	return err
+func (q *Queries) JoinRoom(ctx context.Context, arg JoinRoomParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, joinRoom, arg.UserID, arg.JoinCode)
+	var room_id uuid.UUID
+	err := row.Scan(&room_id)
+	return room_id, err
 }
 
 const leaveRoom = `-- name: LeaveRoom :exec
 DELETE FROM room_memberships rm
-USING rooms r
-WHERE rm.user_id = $1
-  AND r.join_code = $2
+WHERE user_id = $1
+  AND room_id = $2
 `
 
 type LeaveRoomParams struct {
-	UserID   uuid.UUID `json:"user_id"`
-	JoinCode string    `json:"join_code"`
+	UserID uuid.UUID `json:"user_id"`
+	RoomID uuid.UUID `json:"room_id"`
 }
 
 func (q *Queries) LeaveRoom(ctx context.Context, arg LeaveRoomParams) error {
-	_, err := q.db.ExecContext(ctx, leaveRoom, arg.UserID, arg.JoinCode)
+	_, err := q.db.ExecContext(ctx, leaveRoom, arg.UserID, arg.RoomID)
 	return err
 }

@@ -23,15 +23,15 @@ func (h *SessionsHandler) GetConfig() *utils.Config {
 func (h *SessionsHandler) HandleCreateSession(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
 		http.StatusCreated,
-		func(data CreateSessionRequest, claims *utils.Claims) (CreateSessionResponse, *utils.ServiceError) {
-			joinCode, sErr := utils.GetPathValue(r, "join_code")
+		func(data CreateSessionRequest, claims *utils.Claims) (Session, *utils.ServiceError) {
+			roomId, sErr := utils.GetRoomIdFromPath(r)
 			if sErr != nil {
-				return CreateSessionResponse{}, sErr
+				return Session{}, sErr
 			}
 
-			res, sErr := h.createSessionService(r.Context(), claims.UserId, joinCode, data.Name)
+			res, sErr := h.createSessionService(r.Context(), claims.UserId, roomId, data.Name)
 			if sErr != nil {
-				return CreateSessionResponse{}, sErr
+				return Session{}, sErr
 			}
 
 			return res, nil

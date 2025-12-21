@@ -2,8 +2,11 @@ package utils
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 func NewNullString(str *string) sql.NullString {
@@ -31,4 +34,49 @@ func GetPathValue(r *http.Request, name string) (string, *ServiceError) {
 	}
 
 	return val, nil
+}
+
+func GetRoomIdFromPath(r *http.Request) (uuid.UUID, *ServiceError) {
+	roomIdStr, sErr := GetPathValue(r, "room_id")
+	if sErr != nil {
+		return uuid.Nil, sErr
+	}
+	roomId, err := uuid.FromBytes([]byte(roomIdStr))
+	if err != nil {
+		return uuid.Nil, &ServiceError{
+			StatusCode: http.StatusBadRequest,
+			Code:       ErrBadRequest,
+			Message:    "invalid room id",
+		}
+	}
+	return roomId, nil
+}
+
+type NullTime struct {
+	Value sql.NullTime
+}
+
+func NewNullTime(val sql.NullTime) NullTime {
+	return NullTime{
+		Value: val,
+	}
+}
+
+func (nt NullTime) MarshalJSON() ([]byte, error) {
+	if !nt.Value.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(nt.Value.Time)
+}
+
+func (nt *NullTime) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		nt.Value.Valid = false
+		return nil
+	}
+	err := json.Unmarshal(b, &nt.Value.Time)
+	if err == nil {
+		nt.Value.Valid = true
+	}
+	return err
 }

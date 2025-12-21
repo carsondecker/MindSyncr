@@ -9,42 +9,29 @@ import (
 	"github.com/google/uuid"
 )
 
-func (h *SessionsHandler) createSessionService(ctx context.Context, userId uuid.UUID, joinCode, name string) (CreateSessionResponse, *utils.ServiceError) {
-	ownerId, err := h.cfg.Queries.GetRoomOwnerIdByJoinCode(ctx, joinCode)
-	if err != nil {
-		return CreateSessionResponse{}, &utils.ServiceError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       utils.ErrDbtxFail,
-			Message:    err.Error(),
-		}
-	}
-	if userId != ownerId {
-		return CreateSessionResponse{}, &utils.ServiceError{
-			StatusCode: http.StatusForbidden,
-			Code:       utils.ErrForbidden,
-			Message:    "users cannot create a session on a room they don't own",
-		}
-	}
-
+// TODO: make it so sessions automatically start on creation and that the previous session must be ended before creation
+func (h *SessionsHandler) createSessionService(ctx context.Context, userId, roomId uuid.UUID, name string) (Session, *utils.ServiceError) {
 	row, err := h.cfg.Queries.InsertSession(ctx, sqlc.InsertSessionParams{
-		OwnerID:  userId,
-		JoinCode: joinCode,
-		Name:     name,
+		OwnerID: userId,
+		RoomID:  roomId,
+		Name:    name,
 	})
 	if err != nil {
-		return CreateSessionResponse{}, &utils.ServiceError{
+		return Session{}, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
 			Code:       utils.ErrDbtxFail,
 			Message:    err.Error(),
 		}
 	}
 
-	res := CreateSessionResponse{
+	res := Session{
 		Id:        row.ID,
 		RoomId:    row.RoomID,
 		OwnerID:   row.OwnerID,
 		Name:      row.Name,
 		IsActive:  row.IsActive,
+		StartedAt: row.StartedAt,
+		EndedAt:   utils.NewNullTime(row.EndedAt),
 		CreatedAt: row.CreatedAt,
 		UpdatedAt: row.UpdatedAt,
 	}

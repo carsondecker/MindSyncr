@@ -5,6 +5,7 @@ import (
 
 	"github.com/carsondecker/MindSyncr/internal/auth"
 	"github.com/carsondecker/MindSyncr/internal/rooms"
+	"github.com/carsondecker/MindSyncr/internal/sessions"
 	"github.com/carsondecker/MindSyncr/internal/utils"
 )
 
@@ -13,6 +14,8 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	router := http.NewServeMux()
 
 	baseRouter.Handle("/api/v1/", http.StripPrefix("/api/v1", router))
+
+	middlewareHandler := utils.NewMiddlewareHandler(cfg)
 
 	router.HandleFunc("GET /healthz", healthzHandler)
 
@@ -27,14 +30,33 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 
 	roomsRouter := http.NewServeMux()
 	roomsHandler := rooms.NewRoomsHandler(cfg)
-	roomsRouter.Handle("POST /", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleCreateRoom)))
+
+	roomsRouter.Handle("POST /", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomMembership(http.HandlerFunc(roomsHandler.HandleCreateRoom)),
+	))
 	roomsRouter.Handle("GET /", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleGetRooms)))
-	roomsRouter.Handle("PATCH /{join_code}", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleUpdateRoom)))
-	roomsRouter.Handle("DELETE /{join_code}", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleDeleteRoom)))
+	roomsRouter.Handle("GET /{room_id}", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomMembership(http.HandlerFunc(roomsHandler.HandleGetRoom)),
+	))
+	roomsRouter.Handle("PATCH /{room_id}", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomOwnership(http.HandlerFunc(roomsHandler.HandleUpdateRoom)),
+	))
+	roomsRouter.Handle("DELETE /{room_id}", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomOwnership(http.HandlerFunc(roomsHandler.HandleDeleteRoom)),
+	))
 	roomsRouter.Handle("POST /{join_code}/join", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleJoinRoom)))
-	roomsRouter.Handle("POST /{join_code}/leave", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleLeaveRoom)))
+	roomsRouter.Handle("POST /{room_id}/leave", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleLeaveRoom)))
 
 	router.Handle("/rooms/", http.StripPrefix("/rooms", roomsRouter))
+
+	dependentSessionsRouter := http.NewServeMux()
+	sessionsHandler := sessions.NewSessionsHandler(cfg)
+
+	dependentSessionsRouter.Handle("POST /", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomOwnership(http.HandlerFunc(sessionsHandler.HandleCreateSession)),
+	))
+
+	roomsRouter.Handle("/{room_id}/sessions/", http.StripPrefix("/{room_id}/sessions", dependentSessionsRouter))
 
 	return baseRouter
 }
