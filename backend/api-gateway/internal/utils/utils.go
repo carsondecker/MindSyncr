@@ -36,20 +36,20 @@ func GetPathValue(r *http.Request, name string) (string, *ServiceError) {
 	return val, nil
 }
 
-func GetRoomIdFromPath(r *http.Request) (uuid.UUID, *ServiceError) {
-	roomIdStr, sErr := GetPathValue(r, "room_id")
+func GetUUIDPathValue(r *http.Request, name string) (uuid.UUID, *ServiceError) {
+	idStr, sErr := GetPathValue(r, name)
 	if sErr != nil {
 		return uuid.Nil, sErr
 	}
-	roomId, err := uuid.FromBytes([]byte(roomIdStr))
+	id, err := uuid.FromBytes([]byte(idStr))
 	if err != nil {
 		return uuid.Nil, &ServiceError{
 			StatusCode: http.StatusBadRequest,
 			Code:       ErrBadRequest,
-			Message:    "invalid room id",
+			Message:    "invalid id",
 		}
 	}
-	return roomId, nil
+	return id, nil
 }
 
 type NullTime struct {

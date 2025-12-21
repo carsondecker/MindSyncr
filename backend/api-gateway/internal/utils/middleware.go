@@ -91,7 +91,7 @@ func (h *MiddlewareHandler) CheckRoomOwnership(next http.Handler) http.Handler {
 			return
 		}
 
-		roomId, sErr := GetRoomIdFromPath(r)
+		roomId, sErr := GetUUIDPathValue(r, "room_id")
 		if sErr != nil {
 			SError(w, sErr)
 			return

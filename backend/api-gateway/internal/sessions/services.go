@@ -38,3 +38,56 @@ func (h *SessionsHandler) createSessionService(ctx context.Context, userId, room
 
 	return res, nil
 }
+
+func (h *SessionsHandler) getSessionsService(ctx context.Context, roomId uuid.UUID) ([]Session, *utils.ServiceError) {
+	rows, err := h.cfg.Queries.GetSessionsByRoomId(ctx, roomId)
+	if err != nil {
+		return nil, &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	rooms := make([]Session, 0)
+	for _, row := range rows {
+		rooms = append(rooms, Session{
+			Id:        row.ID,
+			RoomId:    row.RoomID,
+			OwnerID:   row.OwnerID,
+			Name:      row.Name,
+			IsActive:  row.IsActive,
+			StartedAt: row.StartedAt,
+			EndedAt:   utils.NewNullTime(row.EndedAt),
+			CreatedAt: row.CreatedAt,
+			UpdatedAt: row.UpdatedAt,
+		})
+	}
+
+	return rooms, nil
+}
+
+func (h *SessionsHandler) getSessionService(ctx context.Context, sessionId uuid.UUID) (Session, *utils.ServiceError) {
+	row, err := h.cfg.Queries.GetSessionById(ctx, sessionId)
+	if err != nil {
+		return Session{}, &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	res := Session{
+		Id:        row.ID,
+		RoomId:    row.RoomID,
+		OwnerID:   row.OwnerID,
+		Name:      row.Name,
+		IsActive:  row.IsActive,
+		StartedAt: row.StartedAt,
+		EndedAt:   utils.NewNullTime(row.EndedAt),
+		CreatedAt: row.CreatedAt,
+		UpdatedAt: row.UpdatedAt,
+	}
+
+	return res, nil
+}

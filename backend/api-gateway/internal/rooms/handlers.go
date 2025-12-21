@@ -64,7 +64,7 @@ func (h *RoomsHandler) HandleGetRoom(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFunc(h, w, r,
 		http.StatusOK,
 		func() (Room, *utils.ServiceError) {
-			roomId, sErr := utils.GetRoomIdFromPath(r)
+			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
 			if sErr != nil {
 				return Room{}, sErr
 			}
@@ -83,7 +83,7 @@ func (h *RoomsHandler) HandleUpdateRoom(w http.ResponseWriter, r *http.Request) 
 	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
 		http.StatusOK,
 		func(data PatchRoomRequest, claims *utils.Claims) (Room, *utils.ServiceError) {
-			roomId, sErr := utils.GetRoomIdFromPath(r)
+			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
 			if sErr != nil {
 				return Room{}, sErr
 			}
@@ -102,7 +102,7 @@ func (h *RoomsHandler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) 
 	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
-			roomId, sErr := utils.GetRoomIdFromPath(r)
+			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
 			if sErr != nil {
 				return struct{}{}, sErr
 			}
@@ -140,7 +140,7 @@ func (h *RoomsHandler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
-			roomId, sErr := utils.GetRoomIdFromPath(r)
+			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
 			if sErr != nil {
 				return struct{}{}, sErr
 			}
