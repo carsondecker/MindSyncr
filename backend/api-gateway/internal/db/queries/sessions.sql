@@ -35,6 +35,11 @@ WHERE s.id = $1
     AND r.owner_id = $2
 LIMIT 1;
 
+-- name: GetSessionOwnerById :one
+SELECT owner_id
+FROM sessions
+WHERE id = $1;
+
 -- name: EndSession :exec
 UPDATE sessions
 SET is_active = FALSE,

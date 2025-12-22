@@ -65,7 +65,13 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 		middlewareHandler.CheckRoomOwnershipBySessionId(http.HandlerFunc(sessionsHandler.HandleDeleteSession)),
 	))
 	sessionsRouter.Handle("POST /{session_id}/end", utils.AuthMiddleware(
-		middlewareHandler.CheckRoomMembershipBySessionId(http.HandlerFunc(sessionsHandler.HandleEndSession)),
+		middlewareHandler.CheckRoomOwnershipBySessionId(http.HandlerFunc(sessionsHandler.HandleEndSession)),
+	))
+	sessionsRouter.Handle("POST /{session_id}/join", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomMembershipBySessionId(http.HandlerFunc(sessionsHandler.HandleJoinSession)),
+	))
+	sessionsRouter.Handle("POST /{session_id}/leave", utils.AuthMiddleware(
+		middlewareHandler.CheckRoomMembershipBySessionId(http.HandlerFunc(sessionsHandler.HandleLeaveSession)),
 	))
 
 	router.Handle("/sessions/", http.StripPrefix("/sessions", sessionsRouter))

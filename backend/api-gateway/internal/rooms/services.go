@@ -190,7 +190,7 @@ func (h *RoomsHandler) joinRoomService(ctx context.Context, userId uuid.UUID, jo
 			if pgErr.Code == "23505" {
 				return JoinRoomResponse{}, &utils.ServiceError{
 					StatusCode: http.StatusBadRequest,
-					Code:       utils.ErrUserAlreadyExists,
+					Code:       utils.ErrBadRequest,
 					Message:    "this user has already joined this room",
 				}
 			}

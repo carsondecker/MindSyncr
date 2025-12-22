@@ -116,6 +116,19 @@ func (q *Queries) GetSessionById(ctx context.Context, id uuid.UUID) (Session, er
 	return i, err
 }
 
+const getSessionOwnerById = `-- name: GetSessionOwnerById :one
+SELECT owner_id
+FROM sessions
+WHERE id = $1
+`
+
+func (q *Queries) GetSessionOwnerById(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, getSessionOwnerById, id)
+	var owner_id uuid.UUID
+	err := row.Scan(&owner_id)
+	return owner_id, err
+}
+
 const getSessionsByRoomId = `-- name: GetSessionsByRoomId :many
 SELECT id, room_id, owner_id, name, is_active, started_at, ended_at, created_at, updated_at
 FROM sessions

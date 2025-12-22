@@ -48,6 +48,12 @@ type Session struct {
 	UpdatedAt time.Time    `json:"updated_at"`
 }
 
+type SessionMembership struct {
+	UserID    uuid.UUID `json:"user_id"`
+	SessionID uuid.UUID `json:"session_id"`
+	JoinedAt  time.Time `json:"joined_at"`
+}
+
 type User struct {
 	ID              uuid.UUID `json:"id"`
 	Email           string    `json:"email"`
