@@ -115,6 +115,7 @@ func (h *SessionsHandler) HandleDeleteSession(w http.ResponseWriter, r *http.Req
 	)
 }
 
+// TODO: stop users from joining a session they own
 func (h *SessionsHandler) HandleJoinSession(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
@@ -134,6 +135,7 @@ func (h *SessionsHandler) HandleJoinSession(w http.ResponseWriter, r *http.Reque
 	)
 }
 
+// TODO: stop users from leaving a session they are not a member of
 func (h *SessionsHandler) HandleLeaveSession(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,

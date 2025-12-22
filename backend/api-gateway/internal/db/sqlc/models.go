@@ -11,6 +11,14 @@ import (
 	"github.com/google/uuid"
 )
 
+type ComprehensionScore struct {
+	ID        uuid.UUID `json:"id"`
+	SessionID uuid.UUID `json:"session_id"`
+	UserID    uuid.UUID `json:"user_id"`
+	Score     int16     `json:"score"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type RefreshToken struct {
 	ID        uuid.UUID `json:"id"`
 	UserID    uuid.UUID `json:"user_id"`

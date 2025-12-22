@@ -35,6 +35,16 @@ WHERE s.id = $1
     AND r.owner_id = $2
 LIMIT 1;
 
+-- name: CheckSessionMembershipOnly :one
+SELECT 1
+FROM sessions s
+LEFT JOIN session_memberships sm
+    ON s.id = sm.session_id
+    AND sm.user_id = $2
+WHERE s.id = $1
+    AND sm.user_id IS NOT NULL
+LIMIT 1;
+
 -- name: GetSessionOwnerById :one
 SELECT owner_id
 FROM sessions

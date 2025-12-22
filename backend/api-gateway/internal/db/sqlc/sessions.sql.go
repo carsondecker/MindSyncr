@@ -58,6 +58,29 @@ func (q *Queries) CheckRoomOwnershipBySessionId(ctx context.Context, arg CheckRo
 	return column_1, err
 }
 
+const checkSessionMembershipOnly = `-- name: CheckSessionMembershipOnly :one
+SELECT 1
+FROM sessions s
+LEFT JOIN session_memberships sm
+    ON s.id = sm.session_id
+    AND sm.user_id = $2
+WHERE s.id = $1
+    AND sm.user_id IS NOT NULL
+LIMIT 1
+`
+
+type CheckSessionMembershipOnlyParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) CheckSessionMembershipOnly(ctx context.Context, arg CheckSessionMembershipOnlyParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, checkSessionMembershipOnly, arg.ID, arg.UserID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM sessions
 WHERE owner_id = $1

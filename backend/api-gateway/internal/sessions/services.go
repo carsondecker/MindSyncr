@@ -10,7 +10,6 @@ import (
 	"github.com/lib/pq"
 )
 
-// TODO: make it so sessions automatically start on creation and that the previous session must be ended before creation
 func (h *SessionsHandler) createSessionService(ctx context.Context, userId, roomId uuid.UUID, name string) (Session, *utils.ServiceError) {
 	row, err := h.cfg.Queries.InsertSession(ctx, sqlc.InsertSessionParams{
 		OwnerID: userId,
