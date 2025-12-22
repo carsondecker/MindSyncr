@@ -59,5 +59,13 @@ services:
             - ./backend/api-gateway/tmp/
             - ./backend/api-gateway/*.log
 
+  redis:
+    image: redis:7.4-alpine
+    ports:
+     - "6739:6739"
+    volumes:
+     - redis_data:/data
+
 volumes:
   db_data:
+  redis_data:
