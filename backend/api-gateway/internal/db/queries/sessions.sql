@@ -1,19 +1,39 @@
 -- name: InsertSession :one
 INSERT INTO sessions (owner_id, room_id, name) 
-SELECT $1, r.id, $3
-FROM rooms r
-WHERE room_id = $2
+VALUES ($1, $2, $3)
 RETURNING id, room_id, owner_id, name, is_active, started_at, ended_at, created_at, updated_at;
 
 -- name: GetSessionsByRoomId :many
 SELECT id, room_id, owner_id, name, is_active, started_at, ended_at, created_at, updated_at
 FROM sessions
-WHERE room_id = $1;
+WHERE room_id = $1
+ORDER BY created_at DESC;
 
 -- name: GetSessionById :one
 SELECT id, room_id, owner_id, name, is_active, started_at, ended_at, created_at, updated_at
 FROM sessions
 WHERE id = $1;
+
+-- name: CheckRoomMembershipBySessionId :one
+SELECT 1
+FROM rooms r
+LEFT JOIN room_memberships rm
+    ON r.id = rm.room_id
+    AND rm.user_id = $2
+JOIN sessions s
+    ON r.id = s.room_id
+WHERE s.id = $1
+    AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
+LIMIT 1;
+
+-- name: CheckRoomOwnershipBySessionId :one
+SELECT 1
+FROM rooms r
+JOIN sessions s
+    ON r.id = s.room_id
+WHERE s.id = $1
+    AND r.owner_id = $2
+LIMIT 1;
 
 -- name: EndSession :exec
 UPDATE sessions

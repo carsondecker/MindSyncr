@@ -11,6 +11,53 @@ import (
 	"github.com/google/uuid"
 )
 
+const checkRoomMembershipBySessionId = `-- name: CheckRoomMembershipBySessionId :one
+SELECT 1
+FROM rooms r
+LEFT JOIN room_memberships rm
+    ON r.id = rm.room_id
+    AND rm.user_id = $2
+JOIN sessions s
+    ON r.id = s.room_id
+WHERE s.id = $1
+    AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
+LIMIT 1
+`
+
+type CheckRoomMembershipBySessionIdParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) CheckRoomMembershipBySessionId(ctx context.Context, arg CheckRoomMembershipBySessionIdParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, checkRoomMembershipBySessionId, arg.ID, arg.UserID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const checkRoomOwnershipBySessionId = `-- name: CheckRoomOwnershipBySessionId :one
+SELECT 1
+FROM rooms r
+JOIN sessions s
+    ON r.id = s.room_id
+WHERE s.id = $1
+    AND r.owner_id = $2
+LIMIT 1
+`
+
+type CheckRoomOwnershipBySessionIdParams struct {
+	ID      uuid.UUID `json:"id"`
+	OwnerID uuid.UUID `json:"owner_id"`
+}
+
+func (q *Queries) CheckRoomOwnershipBySessionId(ctx context.Context, arg CheckRoomOwnershipBySessionIdParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, checkRoomOwnershipBySessionId, arg.ID, arg.OwnerID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM sessions
 WHERE owner_id = $1
@@ -73,6 +120,7 @@ const getSessionsByRoomId = `-- name: GetSessionsByRoomId :many
 SELECT id, room_id, owner_id, name, is_active, started_at, ended_at, created_at, updated_at
 FROM sessions
 WHERE room_id = $1
+ORDER BY created_at DESC
 `
 
 func (q *Queries) GetSessionsByRoomId(ctx context.Context, roomID uuid.UUID) ([]Session, error) {
@@ -110,9 +158,7 @@ func (q *Queries) GetSessionsByRoomId(ctx context.Context, roomID uuid.UUID) ([]
 
 const insertSession = `-- name: InsertSession :one
 INSERT INTO sessions (owner_id, room_id, name) 
-SELECT $1, r.id, $3
-FROM rooms r
-WHERE room_id = $2
+VALUES ($1, $2, $3)
 RETURNING id, room_id, owner_id, name, is_active, started_at, ended_at, created_at, updated_at
 `
 

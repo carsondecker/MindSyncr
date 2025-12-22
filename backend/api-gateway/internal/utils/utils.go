@@ -24,7 +24,7 @@ func NewNullString(str *string) sql.NullString {
 }
 
 func GetPathValue(r *http.Request, name string) (string, *ServiceError) {
-	val := r.PathValue("join_code")
+	val := r.PathValue(name)
 	if val == "" {
 		return "", &ServiceError{
 			StatusCode: http.StatusUnprocessableEntity,
@@ -41,7 +41,7 @@ func GetUUIDPathValue(r *http.Request, name string) (uuid.UUID, *ServiceError) {
 	if sErr != nil {
 		return uuid.Nil, sErr
 	}
-	id, err := uuid.FromBytes([]byte(idStr))
+	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return uuid.Nil, &ServiceError{
 			StatusCode: http.StatusBadRequest,

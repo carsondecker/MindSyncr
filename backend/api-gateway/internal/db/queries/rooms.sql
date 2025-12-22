@@ -13,7 +13,7 @@ SELECT id
 FROM rooms
 WHERE join_code = $1;
 
--- name: CheckRoomMembership :one
+-- name: CheckRoomMembershipByRoomId :one
 SELECT 1
 FROM rooms r
 LEFT JOIN room_memberships rm
@@ -23,7 +23,7 @@ WHERE r.id = $1
     AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
 LIMIT 1;
 
--- name: CheckRoomOwnership :one
+-- name: CheckRoomOwnershipByRoomId :one
 SELECT 1
 FROM rooms
 WHERE id = $1

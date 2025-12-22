@@ -11,8 +11,9 @@ CREATE TABLE sessions (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX unique_owner_active_session_per_room
-ON sessions (room_id)
-WHERE is_owner = true AND is_active = true;
+ON sessions (room_id, owner_id)
+WHERE is_active = true;
+
 
 -- +goose Down
 DROP TABLE sessions;

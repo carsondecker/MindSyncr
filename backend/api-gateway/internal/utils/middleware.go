@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
-	"github.com/google/uuid"
 )
 
 type contextKey string
@@ -46,42 +45,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 }
 
 // TODO: update error handling to give a different error if no rows are returned
-func (h *MiddlewareHandler) CheckRoomMembership(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		raw := ctx.Value(UserContextKey)
-		claims, ok := raw.(*Claims)
-		if !ok || claims == nil {
-			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
-			return
-		}
-
-		roomIdStr, sErr := GetPathValue(r, "room_id")
-		if sErr != nil {
-			SError(w, sErr)
-			return
-		}
-		roomId, err := uuid.FromBytes([]byte(roomIdStr))
-		if err != nil {
-			Error(w, http.StatusBadRequest, ErrBadRequest, "invalid room id")
-			return
-		}
-
-		_, err = h.cfg.Queries.CheckRoomMembership(ctx, sqlc.CheckRoomMembershipParams{
-			ID:     roomId,
-			UserID: claims.UserId,
-		})
-		if err != nil {
-			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-// TODO: update error handling to give a different error if no rows are returned
-func (h *MiddlewareHandler) CheckRoomOwnership(next http.Handler) http.Handler {
+func (h *MiddlewareHandler) CheckRoomMembershipByRoomId(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		raw := ctx.Value(UserContextKey)
@@ -97,8 +61,98 @@ func (h *MiddlewareHandler) CheckRoomOwnership(next http.Handler) http.Handler {
 			return
 		}
 
-		_, err := h.cfg.Queries.CheckRoomOwnership(ctx, sqlc.CheckRoomOwnershipParams{
+		_, err := h.cfg.Queries.CheckRoomMembershipByRoomId(ctx, sqlc.CheckRoomMembershipByRoomIdParams{
+			ID:     roomId,
+			UserID: claims.UserId,
+		})
+		if err != nil {
+			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// TODO: update error handling to give a different error if no rows are returned
+func (h *MiddlewareHandler) CheckRoomOwnershipByRoomId(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		raw := ctx.Value(UserContextKey)
+		claims, ok := raw.(*Claims)
+		if !ok || claims == nil {
+			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
+			return
+		}
+
+		roomId, sErr := GetUUIDPathValue(r, "room_id")
+		if sErr != nil {
+			SError(w, sErr)
+			return
+		}
+
+		_, err := h.cfg.Queries.CheckRoomOwnershipByRoomId(ctx, sqlc.CheckRoomOwnershipByRoomIdParams{
 			ID:      roomId,
+			OwnerID: claims.UserId,
+		})
+		if err != nil {
+			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// TODO: update error handling to give a different error if no rows are returned
+func (h *MiddlewareHandler) CheckRoomMembershipBySessionId(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		raw := ctx.Value(UserContextKey)
+		claims, ok := raw.(*Claims)
+		if !ok || claims == nil {
+			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
+			return
+		}
+
+		sessionId, sErr := GetUUIDPathValue(r, "session_id")
+		if sErr != nil {
+			SError(w, sErr)
+			return
+		}
+
+		_, err := h.cfg.Queries.CheckRoomMembershipBySessionId(ctx, sqlc.CheckRoomMembershipBySessionIdParams{
+			ID:     sessionId,
+			UserID: claims.UserId,
+		})
+		if err != nil {
+			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// TODO: update error handling to give a different error if no rows are returned
+func (h *MiddlewareHandler) CheckRoomOwnershipBySessionId(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		raw := ctx.Value(UserContextKey)
+		claims, ok := raw.(*Claims)
+		if !ok || claims == nil {
+			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
+			return
+		}
+
+		sessionId, sErr := GetUUIDPathValue(r, "session_id")
+		if sErr != nil {
+			SError(w, sErr)
+			return
+		}
+
+		_, err := h.cfg.Queries.CheckRoomOwnershipBySessionId(ctx, sqlc.CheckRoomOwnershipBySessionIdParams{
+			ID:      sessionId,
 			OwnerID: claims.UserId,
 		})
 		if err != nil {

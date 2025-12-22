@@ -12,3 +12,11 @@ fi
 if [[ "$1" == "generate-sqlc" ]]; then
     bash ./scripts/generate-sqlc.sh
 fi
+
+if [[ "$1" == "connect-psql" ]]; then
+    bash ./scripts/connect-psql.sh
+fi
+
+if [[ "$1" == "rebuild" ]]; then
+    bash ./scripts/rebuild.sh
+fi

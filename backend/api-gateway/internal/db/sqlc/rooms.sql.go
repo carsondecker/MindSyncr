@@ -41,7 +41,7 @@ func (q *Queries) CheckNewJoinCode(ctx context.Context, joinCode string) ([]uuid
 	return items, nil
 }
 
-const checkRoomMembership = `-- name: CheckRoomMembership :one
+const checkRoomMembershipByRoomId = `-- name: CheckRoomMembershipByRoomId :one
 SELECT 1
 FROM rooms r
 LEFT JOIN room_memberships rm
@@ -52,19 +52,19 @@ WHERE r.id = $1
 LIMIT 1
 `
 
-type CheckRoomMembershipParams struct {
+type CheckRoomMembershipByRoomIdParams struct {
 	ID     uuid.UUID `json:"id"`
 	UserID uuid.UUID `json:"user_id"`
 }
 
-func (q *Queries) CheckRoomMembership(ctx context.Context, arg CheckRoomMembershipParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, checkRoomMembership, arg.ID, arg.UserID)
+func (q *Queries) CheckRoomMembershipByRoomId(ctx context.Context, arg CheckRoomMembershipByRoomIdParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, checkRoomMembershipByRoomId, arg.ID, arg.UserID)
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err
 }
 
-const checkRoomOwnership = `-- name: CheckRoomOwnership :one
+const checkRoomOwnershipByRoomId = `-- name: CheckRoomOwnershipByRoomId :one
 SELECT 1
 FROM rooms
 WHERE id = $1
@@ -72,13 +72,13 @@ WHERE id = $1
 LIMIT 1
 `
 
-type CheckRoomOwnershipParams struct {
+type CheckRoomOwnershipByRoomIdParams struct {
 	ID      uuid.UUID `json:"id"`
 	OwnerID uuid.UUID `json:"owner_id"`
 }
 
-func (q *Queries) CheckRoomOwnership(ctx context.Context, arg CheckRoomOwnershipParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, checkRoomOwnership, arg.ID, arg.OwnerID)
+func (q *Queries) CheckRoomOwnershipByRoomId(ctx context.Context, arg CheckRoomOwnershipByRoomIdParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, checkRoomOwnershipByRoomId, arg.ID, arg.OwnerID)
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err
