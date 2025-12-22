@@ -58,6 +58,20 @@ func (q *Queries) CheckRoomOwnershipBySessionId(ctx context.Context, arg CheckRo
 	return column_1, err
 }
 
+const checkSessionActive = `-- name: CheckSessionActive :one
+SELECT 1
+FROM sessions
+WHERE id = $1
+    AND is_active = TRUE
+`
+
+func (q *Queries) CheckSessionActive(ctx context.Context, id uuid.UUID) (int32, error) {
+	row := q.db.QueryRowContext(ctx, checkSessionActive, id)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const checkSessionMembershipOnly = `-- name: CheckSessionMembershipOnly :one
 SELECT 1
 FROM sessions s

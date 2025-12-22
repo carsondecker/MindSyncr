@@ -45,6 +45,12 @@ WHERE s.id = $1
     AND sm.user_id IS NOT NULL
 LIMIT 1;
 
+-- name: CheckSessionActive :one
+SELECT 1
+FROM sessions
+WHERE id = $1
+    AND is_active = TRUE;
+
 -- name: GetSessionOwnerById :one
 SELECT owner_id
 FROM sessions

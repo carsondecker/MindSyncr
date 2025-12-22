@@ -193,3 +193,21 @@ func (h *MiddlewareHandler) CheckSessionMembershipOnly(next http.Handler) http.H
 		next.ServeHTTP(w, r)
 	})
 }
+
+func (h *MiddlewareHandler) CheckSessionActive(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sessionId, sErr := GetUUIDPathValue(r, "session_id")
+		if sErr != nil {
+			SError(w, sErr)
+			return
+		}
+
+		_, err := h.cfg.Queries.CheckSessionActive(r.Context(), sessionId)
+		if err != nil {
+			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}

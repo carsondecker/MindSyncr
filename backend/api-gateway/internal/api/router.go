@@ -78,7 +78,9 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	comprehensionScoresHandler := comprehensionscores.NewComprehensionScoresHandler(cfg)
 
 	sessionsRouter.Handle("POST /{session_id}/comprehension-scores", utils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(http.HandlerFunc(comprehensionScoresHandler.HandleCreateComprehensionScore)),
+		middlewareHandler.CheckSessionMembershipOnly(
+			middlewareHandler.CheckSessionActive(http.HandlerFunc(comprehensionScoresHandler.HandleCreateComprehensionScore)),
+		),
 	))
 	sessionsRouter.Handle("GET /{session_id}/comprehension-scores", utils.AuthMiddleware(
 		middlewareHandler.CheckSessionMembershipOnly(http.HandlerFunc(comprehensionScoresHandler.HandleGetComprehensionScores)),
