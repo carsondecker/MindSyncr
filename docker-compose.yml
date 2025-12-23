@@ -28,6 +28,19 @@ services:
       - ./backend/api-gateway/internal/db/migrations:/migrations
     restart: "no"
 
+  redis:
+    image: redis:7.4-alpine
+    container_name: MindSyncr-redis
+    ports:
+    - "6739:6739"
+    volumes:
+    - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: ./backend/api-gateway
@@ -39,6 +52,8 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     env_file:
     - ./backend/api-gateway/.env
     environment:
@@ -58,13 +73,6 @@ services:
           ignore:
             - ./backend/api-gateway/tmp/
             - ./backend/api-gateway/*.log
-
-  redis:
-    image: redis:7.4-alpine
-    ports:
-     - "6739:6739"
-    volumes:
-     - redis_data:/data
 
 volumes:
   db_data:

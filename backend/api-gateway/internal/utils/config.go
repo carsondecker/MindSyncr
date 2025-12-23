@@ -9,23 +9,25 @@ import (
 )
 
 type Config struct {
-	Router    *http.ServeMux
-	DB        *sql.DB
-	Queries   *sqlc.Queries
-	Validator *validator.Validate
+	Router      *http.ServeMux
+	DB          *sql.DB
+	Queries     *sqlc.Queries
+	Validator   *validator.Validate
+	RedisClient *RedisClient
 }
 
-func NewConfig(db *sql.DB, queries *sqlc.Queries) *Config {
+func NewConfig(db *sql.DB, queries *sqlc.Queries, redisClient *RedisClient) *Config {
 	router := http.NewServeMux()
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	RegisterCustomValidations(validate)
 
 	app := &Config{
-		Router:    router,
-		DB:        db,
-		Queries:   queries,
-		Validator: validate,
+		Router:      router,
+		DB:          db,
+		Queries:     queries,
+		Validator:   validate,
+		RedisClient: redisClient,
 	}
 
 	return app

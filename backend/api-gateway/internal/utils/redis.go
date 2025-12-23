@@ -1,7 +1,9 @@
-package rdb
+package utils
 
 import (
 	"encoding/json"
+	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -25,8 +27,12 @@ type Event struct {
 }
 
 func NewRedisClient(addr string) (*RedisClient, error) {
+	if len(addr) == 0 {
+		log.Fatal()
+	}
+
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "addr",
+		Addr: addr,
 	})
 
 	err := rdb.XGroupCreateMkStream("events", "workers", "$").Err()
@@ -42,12 +48,12 @@ func NewRedisClient(addr string) (*RedisClient, error) {
 }
 
 func NewEvent(entity, eventType string, sessionId, actorId, entityId uuid.UUID, data any) (Event, error) {
-	dataJson, err := json.Marshal(data)
+	eventId, err := uuid.NewUUID()
 	if err != nil {
 		return Event{}, err
 	}
 
-	eventId, err := uuid.NewUUID()
+	dataJson, err := json.Marshal(data)
 	if err != nil {
 		return Event{}, err
 	}
@@ -73,7 +79,7 @@ func (r *RedisClient) BroadcastEvent(e Event) error {
 		"entity":     e.Entity,
 		"entity_id":  e.EntityID,
 		"session_id": e.SessionID,
-		"action_id":  e.ActorID,
+		"actor_id":   e.ActorID,
 		"ts":         e.Timestamp,
 		"data":       e.Data,
 	}
@@ -89,6 +95,28 @@ func (r *RedisClient) BroadcastEvent(e Event) error {
 	err := r.RDB.XAdd(args).Err()
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (r *RedisClient) Broadcast(entity, eventType string, sessionId, actorId, entityId uuid.UUID, data any) *ServiceError {
+	e, err := NewEvent(entity, eventType, sessionId, actorId, entityId, data)
+	if err != nil {
+		return &ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       ErrBroadcastFail,
+			Message:    err.Error(),
+		}
+	}
+
+	err = r.BroadcastEvent(e)
+	if err != nil {
+		return &ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       ErrBroadcastFail,
+			Message:    err.Error(),
+		}
 	}
 
 	return nil

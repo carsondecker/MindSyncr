@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -19,8 +18,8 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func JWTInit() {
-	secret = []byte(os.Getenv("JWT_SECRET"))
+func JWTInit(s string) {
+	secret = []byte(s)
 }
 
 func CreateJWT(userId uuid.UUID, email, username, role string) (string, error) {

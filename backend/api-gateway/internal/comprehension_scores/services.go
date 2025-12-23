@@ -31,6 +31,11 @@ func (h *ComprehensionScoresHandler) createComprehensionScoreService(ctx context
 		CreatedAt: row.CreatedAt,
 	}
 
+	sErr := h.cfg.RedisClient.Broadcast("comprehension_scores", "created", sessionId, userId, res.Id, res)
+	if sErr != nil {
+		return ComprehensionScore{}, sErr
+	}
+
 	return res, nil
 }
 

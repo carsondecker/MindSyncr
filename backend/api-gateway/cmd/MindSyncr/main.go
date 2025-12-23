@@ -28,11 +28,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	utils.JWTInit()
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if len(jwtSecret) == 0 {
+		log.Fatal(err)
+	}
+	utils.JWTInit(jwtSecret)
+
+	redisAddr := os.Getenv("REDIS_URL")
+	if len(redisAddr) == 0 {
+		log.Fatal(err)
+	}
+	redisClient, err := utils.NewRedisClient(redisAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	queries := sqlc.New(db)
 
-	config := utils.NewConfig(db, queries)
+	config := utils.NewConfig(db, queries, redisClient)
 
 	config.Router = api.GetRouter(config)
 

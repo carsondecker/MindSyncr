@@ -20,3 +20,7 @@ fi
 if [[ "$1" == "rebuild" ]]; then
     bash ./scripts/rebuild.sh
 fi
+
+if [[ "$1" == "connect-redis" ]]; then
+    bash ./scripts/connect-redis.sh
+fi
