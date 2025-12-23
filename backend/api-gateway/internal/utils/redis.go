@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -34,11 +33,6 @@ func NewRedisClient(addr string) (*RedisClient, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: addr,
 	})
-
-	err := rdb.XGroupCreateMkStream("events", "workers", "$").Err()
-	if err != nil && !strings.Contains(err.Error(), "BUSYGROUP") {
-		return nil, err
-	}
 
 	client := &RedisClient{
 		RDB: rdb,
@@ -100,6 +94,7 @@ func (r *RedisClient) BroadcastEvent(e Event) error {
 	return nil
 }
 
+// TODO: consider broadcasting through a channel and have a go routine pump them through to avoid error messages being given to clients?
 func (r *RedisClient) Broadcast(entity, eventType string, sessionId, actorId, entityId uuid.UUID, data any) *ServiceError {
 	e, err := NewEvent(entity, eventType, sessionId, actorId, entityId, data)
 	if err != nil {
