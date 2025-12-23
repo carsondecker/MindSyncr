@@ -117,6 +117,7 @@ func (h *RoomsHandler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) 
 	)
 }
 
+// TODO: stop users from joining a room they own
 func (h *RoomsHandler) HandleJoinRoom(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
@@ -136,6 +137,7 @@ func (h *RoomsHandler) HandleJoinRoom(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// TODO: stop users from leaving a room they are not a member of
 func (h *RoomsHandler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
