@@ -74,6 +74,35 @@ services:
             - ./backend/api-gateway/tmp/
             - ./backend/api-gateway/*.log
 
+  ws:
+    build:
+      context: ./backend/ws-service
+      dockerfile: Dockerfile
+      args:
+        ENV: ${ENV:-development}
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+    - ./backend/ws-service/.env
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/MindSyncr?sslmode=disable
+    ports:
+      - "3001:3001"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./backend/ws-service/go.mod
+        
+        - action: rebuild
+          path: ./backend/ws-service/go.sum
+        
+        - action: rebuild
+          path: ./backend/ws-service
+          ignore:
+            - ./backend/ws-service/tmp/
+            - ./backend/ws-service/*.log
+
 volumes:
   db_data:
   redis_data:

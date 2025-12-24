@@ -7,7 +7,7 @@ import (
 )
 
 type CreateComprehensionScoreRequest struct {
-	Score int16 `json:"name" validate:"required,min=1,max=5"`
+	Score int16 `json:"score" validate:"required,min=1,max=5"`
 }
 
 type ComprehensionScore struct {
