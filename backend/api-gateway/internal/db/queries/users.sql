@@ -5,14 +5,14 @@ VALUES (
     $2,
     $3
 )
-RETURNING id, email, username, role, created_at;
+RETURNING id, email, username, role, is_email_verified, status, created_at, updated_at;
 
 -- name: GetUserForLogin :one
-SELECT id, email, username, role, password_hash
+SELECT id, email, username, role, is_email_verified, status, created_at, updated_at, password_hash
 FROM users
 WHERE email = $1;
 
 -- name: GetUserById :one
-SELECT id, email, username, role
+SELECT id, email, username, role, is_email_verified, status, created_at, updated_at
 FROM users
 WHERE id = $1;

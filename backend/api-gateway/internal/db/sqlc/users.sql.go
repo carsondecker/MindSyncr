@@ -13,16 +13,20 @@ import (
 )
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, email, username, role
+SELECT id, email, username, role, is_email_verified, status, created_at, updated_at
 FROM users
 WHERE id = $1
 `
 
 type GetUserByIdRow struct {
-	ID       uuid.UUID `json:"id"`
-	Email    string    `json:"email"`
-	Username string    `json:"username"`
-	Role     string    `json:"role"`
+	ID              uuid.UUID `json:"id"`
+	Email           string    `json:"email"`
+	Username        string    `json:"username"`
+	Role            string    `json:"role"`
+	IsEmailVerified bool      `json:"is_email_verified"`
+	Status          string    `json:"status"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (GetUserByIdRow, error) {
@@ -33,22 +37,30 @@ func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (GetUserByIdRow
 		&i.Email,
 		&i.Username,
 		&i.Role,
+		&i.IsEmailVerified,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getUserForLogin = `-- name: GetUserForLogin :one
-SELECT id, email, username, role, password_hash
+SELECT id, email, username, role, is_email_verified, status, created_at, updated_at, password_hash
 FROM users
 WHERE email = $1
 `
 
 type GetUserForLoginRow struct {
-	ID           uuid.UUID `json:"id"`
-	Email        string    `json:"email"`
-	Username     string    `json:"username"`
-	Role         string    `json:"role"`
-	PasswordHash string    `json:"password_hash"`
+	ID              uuid.UUID `json:"id"`
+	Email           string    `json:"email"`
+	Username        string    `json:"username"`
+	Role            string    `json:"role"`
+	IsEmailVerified bool      `json:"is_email_verified"`
+	Status          string    `json:"status"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+	PasswordHash    string    `json:"password_hash"`
 }
 
 func (q *Queries) GetUserForLogin(ctx context.Context, email string) (GetUserForLoginRow, error) {
@@ -59,6 +71,10 @@ func (q *Queries) GetUserForLogin(ctx context.Context, email string) (GetUserFor
 		&i.Email,
 		&i.Username,
 		&i.Role,
+		&i.IsEmailVerified,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 		&i.PasswordHash,
 	)
 	return i, err
@@ -71,7 +87,7 @@ VALUES (
     $2,
     $3
 )
-RETURNING id, email, username, role, created_at
+RETURNING id, email, username, role, is_email_verified, status, created_at, updated_at
 `
 
 type InsertUserParams struct {
@@ -81,11 +97,14 @@ type InsertUserParams struct {
 }
 
 type InsertUserRow struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	Username  string    `json:"username"`
-	Role      string    `json:"role"`
-	CreatedAt time.Time `json:"created_at"`
+	ID              uuid.UUID `json:"id"`
+	Email           string    `json:"email"`
+	Username        string    `json:"username"`
+	Role            string    `json:"role"`
+	IsEmailVerified bool      `json:"is_email_verified"`
+	Status          string    `json:"status"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (InsertUserRow, error) {
@@ -96,7 +115,10 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (InsertU
 		&i.Email,
 		&i.Username,
 		&i.Role,
+		&i.IsEmailVerified,
+		&i.Status,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

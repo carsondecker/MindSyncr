@@ -1,11 +1,13 @@
+import { ApiError } from "../utils/ApiError"
+
 const API_BASE = import.meta.env.VITE_API_URL ?? ""
 
-export type ApiSuccess<T> = {
+export type ApiSuccessWrapper<T> = {
   success: true
   data: T
 }
 
-export type ApiError = {
+export type ApiErrorWrapper = {
   success: false
   error: {
     code: string
@@ -13,7 +15,7 @@ export type ApiError = {
   }
 }
 
-export type ApiResponse<T> = ApiSuccess<T> | ApiError
+export type ApiResponse<T> = ApiSuccessWrapper<T> | ApiErrorWrapper
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -23,10 +25,13 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   })
 
   const json: ApiResponse<T> = await res.json()
-
+  
   if (!json.success) {
-    throw new Error(json.error.message)
+    console.error(`Error in API call to ${path} with response:`, json)
+    throw new ApiError(json.error.code, json.error.message)
   }
+
+  console.log(`Successful API call to ${path} with response:`, json)
 
   return json.data
 }

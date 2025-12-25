@@ -26,6 +26,7 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	authRouter.HandleFunc("POST /login", authHandler.HandleLogin)
 	authRouter.HandleFunc("POST /refresh", authHandler.HandleRefresh)
 	authRouter.Handle("POST /logout", utils.AuthMiddleware(http.HandlerFunc(authHandler.HandleLogout)))
+	authRouter.Handle("GET /me", utils.AuthMiddleware(http.HandlerFunc(authHandler.HandleGetUser)))
 
 	router.Handle("/auth/", http.StripPrefix("/auth", authRouter))
 
@@ -72,7 +73,9 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 		middlewareHandler.CheckRoomMembershipBySessionId(http.HandlerFunc(sessionsHandler.HandleJoinSession)),
 	))
 	sessionsRouter.Handle("POST /{session_id}/leave", utils.AuthMiddleware(
-		middlewareHandler.CheckRoomMembershipBySessionId(http.HandlerFunc(sessionsHandler.HandleLeaveSession)),
+		middlewareHandler.CheckRoomMembershipBySessionId(
+			middlewareHandler.CheckSessionActive(http.HandlerFunc(sessionsHandler.HandleLeaveSession)),
+		),
 	))
 
 	comprehensionScoresHandler := comprehensionscores.NewComprehensionScoresHandler(cfg)

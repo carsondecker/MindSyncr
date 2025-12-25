@@ -23,12 +23,13 @@ func (h *AuthHandler) GetConfig() *utils.Config {
 func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithBody(h, w, r,
 		http.StatusCreated,
-		func(data RegisterRequest) (RegisterResponse, *utils.ServiceError) {
+		func(data RegisterRequest) (UserWithRefresh, *utils.ServiceError) {
 			res, jwtToken, refreshToken, sErr := h.registerService(r.Context(), data.Email, data.Username, data.Password)
 			if sErr != nil {
-				return RegisterResponse{}, sErr
+				return UserWithRefresh{}, sErr
 			}
 
+			// TODO: change samesite to strict sometime
 			http.SetCookie(w, &http.Cookie{
 				Name:     "access_token",
 				Value:    jwtToken,
@@ -36,7 +37,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   15 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
+				SameSite: http.SameSiteLaxMode,
 			})
 
 			http.SetCookie(w, &http.Cookie{
@@ -46,7 +47,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   7 * 24 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
+				SameSite: http.SameSiteLaxMode,
 			})
 
 			return res, nil
@@ -57,10 +58,10 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithBody(h, w, r,
 		http.StatusOK,
-		func(data LoginRequest) (LoginResponse, *utils.ServiceError) {
+		func(data LoginRequest) (UserWithRefresh, *utils.ServiceError) {
 			res, jwtToken, refreshToken, sErr := h.loginService(r.Context(), data.Email, data.Password)
 			if sErr != nil {
-				return LoginResponse{}, sErr
+				return UserWithRefresh{}, sErr
 			}
 
 			http.SetCookie(w, &http.Cookie{
@@ -70,7 +71,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   15 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
+				SameSite: http.SameSiteLaxMode,
 			})
 
 			http.SetCookie(w, &http.Cookie{
@@ -80,7 +81,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   7 * 24 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
+				SameSite: http.SameSiteLaxMode,
 			})
 
 			return res, nil
@@ -109,7 +110,7 @@ func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   15 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
+				SameSite: http.SameSiteLaxMode,
 			})
 
 			http.SetCookie(w, &http.Cookie{
@@ -119,7 +120,7 @@ func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   7 * 24 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
+				SameSite: http.SameSiteLaxMode,
 			})
 
 			return res, nil
@@ -158,6 +159,20 @@ func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 			})
 
 			return struct{}{}, nil
+		},
+	)
+}
+
+func (h *AuthHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
+	utils.BaseHandlerFuncWithClaims(h, w, r,
+		http.StatusOK,
+		func(claims *utils.Claims) (User, *utils.ServiceError) {
+			res, sErr := h.getUserService(r.Context(), claims.UserId)
+			if sErr != nil {
+				return User{}, sErr
+			}
+
+			return res, nil
 		},
 	)
 }

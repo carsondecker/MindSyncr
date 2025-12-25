@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 
 	"github.com/carsondecker/MindSyncr/internal/api"
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
@@ -49,8 +50,18 @@ func main() {
 
 	config.Router = api.GetRouter(config)
 
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
+		},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+	})
+
 	srv := &http.Server{
-		Handler:      config.Router,
+		Handler:      c.Handler(config.Router),
 		Addr:         ":3000",
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
