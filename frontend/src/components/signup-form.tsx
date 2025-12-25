@@ -14,10 +14,15 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { register } from "@/lib/api/auth"
+import { useAuth } from "@/lib/context/AuthContext"
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
+  const { reloadUser } = useAuth()
+
+  const navigate = useNavigate()
+
   const [email, setEmail] = useState("")
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -26,20 +31,28 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   const [loading, setLoading] = useState(false)
   
   async function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+      e.preventDefault()
+      setError(null)
+      setLoading(true)
   
-    try {
-      const user = await register({email, username, password, confirm_password})
-      console.log("Registered:", user)
-    } catch (err) {
-      setError((err as Error).message)
-      console.error(error)
-    } finally {
-      setLoading(false)
+      try {
+        console.log(email, username, password, confirm_password)
+        const user = await register({email, username, password, confirm_password})
+        
+        console.log("Registered and logged in:", user)
+  
+        const success = await reloadUser()
+        if (!success) throw new Error("failed to get user after registration")
+  
+        navigate("/")
+      } catch (err) {
+        setError((err as Error).message)
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
     }
-  }
+  
 
   return (
     <Card {...props}>
@@ -88,7 +101,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 required
               />
               <FieldDescription>
-                Must be at least 8 characters long.
+                Must be at least 10 characters long.
               </FieldDescription>
             </Field>
             <Field>

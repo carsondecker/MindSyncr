@@ -50,7 +50,7 @@ export async function getUser(): Promise<User> {
 }
 
 export async function refresh(): Promise<User> {
-  const data = await apiFetch<User>("/auth/me", {
+  const data = await apiFetch<User>("/auth/refresh", {
     method: "POST",
   })
 

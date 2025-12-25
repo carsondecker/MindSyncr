@@ -29,7 +29,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 				return UserWithRefresh{}, sErr
 			}
 
-			// TODO: change samesite to strict sometime
+			// TODO: change samesite to strict and secure to true
 			http.SetCookie(w, &http.Cookie{
 				Name:     "access_token",
 				Value:    jwtToken,
@@ -37,7 +37,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   15 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteNoneMode,
 			})
 
 			http.SetCookie(w, &http.Cookie{
@@ -47,7 +47,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   7 * 24 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteNoneMode,
 			})
 
 			return res, nil
@@ -71,7 +71,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   15 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteNoneMode,
 			})
 
 			http.SetCookie(w, &http.Cookie{
@@ -81,7 +81,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   7 * 24 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteNoneMode,
 			})
 
 			return res, nil
@@ -110,7 +110,7 @@ func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   15 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteNoneMode,
 			})
 
 			http.SetCookie(w, &http.Cookie{
@@ -120,7 +120,7 @@ func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 				MaxAge:   7 * 24 * 60,
 				HttpOnly: true,
 				Secure:   true,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteNoneMode,
 			})
 
 			return res, nil
