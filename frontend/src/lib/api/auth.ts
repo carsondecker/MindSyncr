@@ -58,3 +58,9 @@ export async function refresh(): Promise<User> {
 
   return response
 }
+
+export async function logout(): Promise<void> {
+  await apiFetch<User>("/auth/logout", {
+    method: "POST",
+  })
+}

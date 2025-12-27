@@ -1,13 +1,13 @@
-import { createContext, useContext, useEffect, useState } from "react"
-import { getUser, refresh } from "../api/auth"
+import { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { getUser, logout, refresh } from "../api/auth"
 import type { User } from "../api/models/auth"
-import { ApiError } from "../utils/ApiError"
 
 type AuthContextType = {
   user: User | null
   loading: boolean
-  reloadUser: () => Promise<boolean>
-  refreshUser: () => Promise<boolean>
+  loadUser: () => Promise<void>
+  refreshUser: () => Promise<void>
+  logoutUser: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -16,51 +16,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const reloadUser = async (): Promise<boolean> => {
+  const loadUser = useCallback(async () => {
     try {
       const data = await getUser()
-
       setUser(data)
-      return true
-    } catch (err) {
-      if (err instanceof ApiError) {
-        console.log(err)
-
-        if (err.code == "INVALID_ACCESS_TOKEN") {
-          return await refreshUser()
-        } else {
-          setUser(null)
-          return false
-        }
-      } else {
-        setUser(null)
-        return false
-      }
-    }
-    finally {
+    } catch {
+      setUser(null)
+    } finally {
       setLoading(false)
     }
-  }
-
-  const refreshUser = async (): Promise<boolean> => {
-    try {
-      const data = await refresh()
-
-      setUser(data)
-      return true
-    } catch (err) {
-      console.log(err)
-      setUser(null)
-      return false
-    }
-  }
-
-  useEffect(() => {
-    reloadUser()
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const data = await refresh()
+      setUser(data)
+    } catch (err) {
+      setUser(null)
+      throw err
+    }
+  }, [])
+
+  const logoutUser = useCallback(() => {
+    try {
+      logout()
+    } finally {
+      setUser(null)
+      window.location.href = "/login"
+    }
+  }, [])
+
+  useEffect(() => {
+    loadUser()
+  }, [loadUser])
+
   return (
-    <AuthContext.Provider value={{ user, loading, reloadUser, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        loadUser,
+        refreshUser,
+        logoutUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

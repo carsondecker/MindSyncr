@@ -1,4 +1,4 @@
-import { RoomCard } from "@/components/room-card"
+import { RoomItem } from "@/components/room-item"
 import type { Room } from "@/lib/api/models/rooms"
 import { getOwnedRooms } from "@/lib/api/rooms"
 import { useAuth } from "@/lib/context/AuthContext"
@@ -26,7 +26,7 @@ export default function HomePage() {
                 Welcome back, {user != null ? user.username : "unknown"}
             </h1>
             {!loading && rooms?.map((room, i) => (
-                <RoomCard key={i} id={room.id} roomName={room.name} roomDescription={room.description} joinCode={room.join_code} />
+                <RoomItem key={i} id={room.id} roomName={room.name} />
             ))}
         </>
     )

@@ -23,7 +23,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const { reloadUser } = useAuth()
+  const { loadUser } = useAuth()
 
   const navigate = useNavigate()
 
@@ -42,8 +42,7 @@ export function LoginForm({
       
       console.log("Logged in:", user)
 
-      const success = await reloadUser()
-      if (!success) throw new Error("failed to get user after login")
+      await loadUser()
 
       navigate("/")
     } catch (err) {

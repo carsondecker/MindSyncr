@@ -19,7 +19,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
-  const { reloadUser } = useAuth()
+  const { loadUser } = useAuth()
 
   const navigate = useNavigate()
 
@@ -41,8 +41,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         
         console.log("Registered and logged in:", user)
   
-        const success = await reloadUser()
-        if (!success) throw new Error("failed to get user after registration")
+        await loadUser()
   
         navigate("/")
       } catch (err) {
