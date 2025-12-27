@@ -39,8 +39,11 @@ func (h *SessionsHandler) createSessionService(ctx context.Context, userId, room
 	return res, nil
 }
 
-func (h *SessionsHandler) getSessionsService(ctx context.Context, roomId uuid.UUID) ([]Session, *utils.ServiceError) {
-	rows, err := h.cfg.Queries.GetSessionsByRoomId(ctx, roomId)
+func (h *SessionsHandler) getSessionsService(ctx context.Context, userId, roomId uuid.UUID) ([]Session, *utils.ServiceError) {
+	rows, err := h.cfg.Queries.GetSessionsByRoomId(ctx, sqlc.GetSessionsByRoomIdParams{
+		RoomID:  roomId,
+		OwnerID: userId,
+	})
 	if err != nil {
 		return nil, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
@@ -61,14 +64,19 @@ func (h *SessionsHandler) getSessionsService(ctx context.Context, roomId uuid.UU
 			EndedAt:   utils.NewNullTime(row.EndedAt),
 			CreatedAt: row.CreatedAt,
 			UpdatedAt: row.UpdatedAt,
+			IsOwner:   row.IsOwner,
+			IsMember:  row.IsMember,
 		})
 	}
 
 	return rooms, nil
 }
 
-func (h *SessionsHandler) getSessionService(ctx context.Context, sessionId uuid.UUID) (Session, *utils.ServiceError) {
-	row, err := h.cfg.Queries.GetSessionById(ctx, sessionId)
+func (h *SessionsHandler) getSessionService(ctx context.Context, userId, sessionId uuid.UUID) (Session, *utils.ServiceError) {
+	row, err := h.cfg.Queries.GetSessionById(ctx, sqlc.GetSessionByIdParams{
+		ID:      sessionId,
+		OwnerID: userId,
+	})
 	if err != nil {
 		return Session{}, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
@@ -87,6 +95,8 @@ func (h *SessionsHandler) getSessionService(ctx context.Context, sessionId uuid.
 		EndedAt:   utils.NewNullTime(row.EndedAt),
 		CreatedAt: row.CreatedAt,
 		UpdatedAt: row.UpdatedAt,
+		IsOwner:   row.IsOwner,
+		IsMember:  row.IsMember,
 	}
 
 	return res, nil

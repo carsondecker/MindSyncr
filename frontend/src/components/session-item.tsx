@@ -1,43 +1,80 @@
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
 import { Item, ItemActions, ItemContent, ItemTitle } from "./ui/item"
-import { useAuth } from "@/lib/context/AuthContext"
+import { useApi } from "@/lib/hooks/useApi"
+import { useEffect } from "react"
+import { deleteSession, endSession } from "@/lib/api/sessions"
 
 type SessionItemProps = {
+    id: string
     room_id: string
     sessionName: string
     is_active: boolean
     owner_id: string
     ended_at: Date | null
+    is_owner: boolean
+    is_member: boolean
+    removeItem: (session_id: string) => void
+    endItem: (session_id: string) => void
 }
 
-export function SessionItem({ room_id, sessionName, is_active, owner_id, ended_at }: SessionItemProps) {
-    const { user, loading  } = useAuth()
+export function SessionItem({ id, room_id, sessionName, is_active, owner_id, is_owner, is_member, ended_at, removeItem, endItem }: SessionItemProps) {
+  const { run, loading, error } = useApi()
+  
+  const deleteSelf = async () => {
+    try {
+      await run(() => deleteSession(id))
+      removeItem(id)
+    } catch (err) {
 
-    return (
+    }
+  }
+
+  const endSelf = async () => {
+    try {
+      await run(() => endSession(id))
+      endItem(id)
+    } catch (err) {
+
+    }
+  }
+
+  return (
     <Item variant="outline">
       <ItemContent>
         <ItemTitle>
-          <Link to={`/rooms/${room_id}`}>{sessionName}</Link>
+          {sessionName}
         </ItemTitle>
       </ItemContent>
       <ItemActions>
-        {user?.id == owner_id && (
-            <>
-                <Button variant="destructive" size="sm">
-                    Delete
-                </Button>
-                {is_active && !ended_at && (
-                    <Button>
-                        End Session
-                    </Button>
-                )}
-            </>
+        {is_owner && (
+          <>
+              <Button size="sm">
+                <Link to={`sessions/${id}`}>Open</Link>
+              </Button>
+              <Button variant="destructive" size="sm" onClick={deleteSelf}>
+                  Delete
+              </Button>
+              {is_active && !ended_at && (
+                  <Button size="sm" onClick={endSelf}>
+                      End Session
+                  </Button>
+              )}
+          </>
         )}
-         {user?.id != owner_id && (
-            <Button variant="outline" size="sm">
-                Join Session
-            </Button>
+        {!is_owner && (
+          <>
+            {!is_member && (
+              <Button variant="outline" size="sm">
+                <Link to={`sessions/${id}`}>Rejoin Session</Link>
+              </Button>
+            )}
+            {is_member && (
+              <Button variant="outline" size="sm">
+                  Join Session
+              </Button>
+            )}
+          </>
         )}
       </ItemActions>
     </Item>

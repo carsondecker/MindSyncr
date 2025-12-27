@@ -40,15 +40,15 @@ func (h *SessionsHandler) HandleCreateSession(w http.ResponseWriter, r *http.Req
 }
 
 func (h *SessionsHandler) HandleGetSessions(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFunc(h, w, r,
+	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
-		func() ([]Session, *utils.ServiceError) {
+		func(claims *utils.Claims) ([]Session, *utils.ServiceError) {
 			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
 			if sErr != nil {
 				return nil, sErr
 			}
 
-			res, sErr := h.getSessionsService(r.Context(), roomId)
+			res, sErr := h.getSessionsService(r.Context(), claims.UserId, roomId)
 			if sErr != nil {
 				return nil, sErr
 			}
@@ -59,15 +59,15 @@ func (h *SessionsHandler) HandleGetSessions(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *SessionsHandler) HandleGetSession(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFunc(h, w, r,
+	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
-		func() (Session, *utils.ServiceError) {
+		func(claims *utils.Claims) (Session, *utils.ServiceError) {
 			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
 			if sErr != nil {
 				return Session{}, sErr
 			}
 
-			res, sErr := h.getSessionService(r.Context(), sessionId)
+			res, sErr := h.getSessionService(r.Context(), claims.UserId, sessionId)
 			if sErr != nil {
 				return Session{}, sErr
 			}

@@ -7,6 +7,8 @@ package sqlc
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -131,14 +133,38 @@ func (q *Queries) EndSession(ctx context.Context, arg EndSessionParams) error {
 }
 
 const getSessionById = `-- name: GetSessionById :one
-SELECT id, room_id, owner_id, name, is_active, started_at, ended_at, created_at, updated_at
-FROM sessions
+SELECT s.id, s.room_id, s.owner_id, s.name, s.is_active, s.started_at, s.ended_at, s.created_at, s.updated_at,
+    (s.owner_id = $2) as is_owner,
+    (sm.user_id IS NOT NULL)::boolean as is_member
+FROM sessions s
+LEFT JOIN session_memberships sm
+    ON s.id = sm.session_id
+    AND s.user_id = $2
 WHERE id = $1
 `
 
-func (q *Queries) GetSessionById(ctx context.Context, id uuid.UUID) (Session, error) {
-	row := q.db.QueryRowContext(ctx, getSessionById, id)
-	var i Session
+type GetSessionByIdParams struct {
+	ID      uuid.UUID `json:"id"`
+	OwnerID uuid.UUID `json:"owner_id"`
+}
+
+type GetSessionByIdRow struct {
+	ID        uuid.UUID    `json:"id"`
+	RoomID    uuid.UUID    `json:"room_id"`
+	OwnerID   uuid.UUID    `json:"owner_id"`
+	Name      string       `json:"name"`
+	IsActive  bool         `json:"is_active"`
+	StartedAt time.Time    `json:"started_at"`
+	EndedAt   sql.NullTime `json:"ended_at"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+	IsOwner   bool         `json:"is_owner"`
+	IsMember  bool         `json:"is_member"`
+}
+
+func (q *Queries) GetSessionById(ctx context.Context, arg GetSessionByIdParams) (GetSessionByIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getSessionById, arg.ID, arg.OwnerID)
+	var i GetSessionByIdRow
 	err := row.Scan(
 		&i.ID,
 		&i.RoomID,
@@ -149,6 +175,8 @@ func (q *Queries) GetSessionById(ctx context.Context, id uuid.UUID) (Session, er
 		&i.EndedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsOwner,
+		&i.IsMember,
 	)
 	return i, err
 }
@@ -167,21 +195,45 @@ func (q *Queries) GetSessionOwnerById(ctx context.Context, id uuid.UUID) (uuid.U
 }
 
 const getSessionsByRoomId = `-- name: GetSessionsByRoomId :many
-SELECT id, room_id, owner_id, name, is_active, started_at, ended_at, created_at, updated_at
-FROM sessions
-WHERE room_id = $1
-ORDER BY created_at DESC
+SELECT s.id, s.room_id, s.owner_id, s.name, s.is_active, s.started_at, s.ended_at, s.created_at, s.updated_at,
+    (s.owner_id = $2) as is_owner,
+    (sm.user_id IS NOT NULL)::boolean as is_member
+FROM sessions s
+LEFT JOIN session_memberships sm
+    ON s.id = sm.session_id
+    AND sm.user_id = $2
+WHERE s.room_id = $1
+ORDER BY s.created_at DESC
 `
 
-func (q *Queries) GetSessionsByRoomId(ctx context.Context, roomID uuid.UUID) ([]Session, error) {
-	rows, err := q.db.QueryContext(ctx, getSessionsByRoomId, roomID)
+type GetSessionsByRoomIdParams struct {
+	RoomID  uuid.UUID `json:"room_id"`
+	OwnerID uuid.UUID `json:"owner_id"`
+}
+
+type GetSessionsByRoomIdRow struct {
+	ID        uuid.UUID    `json:"id"`
+	RoomID    uuid.UUID    `json:"room_id"`
+	OwnerID   uuid.UUID    `json:"owner_id"`
+	Name      string       `json:"name"`
+	IsActive  bool         `json:"is_active"`
+	StartedAt time.Time    `json:"started_at"`
+	EndedAt   sql.NullTime `json:"ended_at"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at"`
+	IsOwner   bool         `json:"is_owner"`
+	IsMember  bool         `json:"is_member"`
+}
+
+func (q *Queries) GetSessionsByRoomId(ctx context.Context, arg GetSessionsByRoomIdParams) ([]GetSessionsByRoomIdRow, error) {
+	rows, err := q.db.QueryContext(ctx, getSessionsByRoomId, arg.RoomID, arg.OwnerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Session
+	var items []GetSessionsByRoomIdRow
 	for rows.Next() {
-		var i Session
+		var i GetSessionsByRoomIdRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.RoomID,
@@ -192,6 +244,8 @@ func (q *Queries) GetSessionsByRoomId(ctx context.Context, roomID uuid.UUID) ([]
 			&i.EndedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.IsOwner,
+			&i.IsMember,
 		); err != nil {
 			return nil, err
 		}

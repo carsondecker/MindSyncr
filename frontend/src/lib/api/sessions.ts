@@ -13,3 +13,15 @@ export async function getSessions(room_id: string): Promise<Array<Session>> {
 
     return response
 }
+
+export async function deleteSession(session_id: string): Promise<void> {
+    await apiFetch<void>(`/sessions/${session_id}`, {
+        method: "DELETE",
+    })
+}
+
+export async function endSession(session_id: string): Promise<void> {
+    await apiFetch<void>(`/sessions/${session_id}/end`, {
+        method: "POST",
+    })
+}

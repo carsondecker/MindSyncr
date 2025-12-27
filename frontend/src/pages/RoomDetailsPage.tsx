@@ -29,6 +29,20 @@ export default function RoomDetailsPage() {
             setSessions(sessionsRes)
         })
     }, [id, run])
+    
+    const removeItem = (session_id: string) => {
+        setSessions((prev) =>
+            prev ? prev.filter((s) => s.id !== session_id) : prev
+        )
+    }
+
+    const endItem = (session_id: string) => {
+        setSessions(prev => 
+            prev ? prev.map(s =>
+                s.id === session_id ? { ...s, is_active: false } : s
+            ) : null
+        )
+    }
 
     if (loading) {
         return <div>Loading…</div>
@@ -46,11 +60,16 @@ export default function RoomDetailsPage() {
             {sessions?.map((session) => (
                 <SessionItem
                     key={session.id}
+                    id={session.id}
                     room_id={id!}
                     sessionName={session.name}
                     is_active={session.is_active}
                     owner_id={session.owner_id}
                     ended_at={session.ended_at}
+                    is_owner={session.is_owner}
+                    is_member={session.is_member}
+                    removeItem={removeItem}
+                    endItem={endItem}
                 />
             ))}
         </>

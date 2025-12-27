@@ -21,4 +21,6 @@ type Session struct {
 	EndedAt   utils.NullTime `json:"ended_at"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
+	IsOwner   bool           `json:"is_owner"`
+	IsMember  bool           `json:"is_member"`
 }

@@ -26,6 +26,10 @@ export function useApi() {
           }
         }
 
+        if (err?.code == "MISSING_ACCESS_TOKEN") {
+          logoutUser()
+        }
+
         setError(err)
         throw err
       } finally {
