@@ -8,6 +8,7 @@ import (
 	"github.com/carsondecker/MindSyncr/internal/rooms"
 	"github.com/carsondecker/MindSyncr/internal/sessions"
 	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/carsondecker/MindSyncr/internal/ws"
 )
 
 func GetRouter(cfg *utils.Config) *http.ServeMux {
@@ -90,6 +91,13 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	))
 
 	router.Handle("/sessions/", http.StripPrefix("/sessions", sessionsRouter))
+
+	wsRouter := http.NewServeMux()
+	wsHandler := ws.NewWSHandler(cfg)
+
+	wsRouter.Handle("GET /{session_id}", utils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembership(http.HandlerFunc(wsHandler.HandleGetWSTicket)),
+	))
 
 	return baseRouter
 }

@@ -33,7 +33,13 @@ func main() {
 	if len(jwtSecret) == 0 {
 		log.Fatal("failed to get JWT_SECRET from .env")
 	}
-	utils.JWTInit(jwtSecret)
+
+	wsSecret := os.Getenv("WS_SECRET")
+	if len(wsSecret) == 0 {
+		log.Fatal("failed to get WS_SECRET from .env")
+	}
+
+	utils.JWTInit(jwtSecret, wsSecret)
 
 	redisAddr := os.Getenv("REDIS_URL")
 	if len(redisAddr) == 0 {

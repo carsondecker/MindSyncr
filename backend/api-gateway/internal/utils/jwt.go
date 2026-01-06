@@ -9,6 +9,7 @@ import (
 )
 
 var secret []byte
+var wsSecret []byte
 
 type Claims struct {
 	UserId   uuid.UUID `json:"id" validate:"required,not_nil_uuid"`
@@ -18,8 +19,15 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func JWTInit(s string) {
+type WSClaims struct {
+	UserId    uuid.UUID `json:"id" validate:"required,not_nil_uuid"`
+	SessionId uuid.UUID `json:"session_id" validate:"required,not_nil_uuid"`
+	jwt.RegisteredClaims
+}
+
+func JWTInit(s, ws string) {
 	secret = []byte(s)
+	wsSecret = []byte(ws)
 }
 
 func CreateJWT(userId uuid.UUID, email, username, role string) (string, error) {
@@ -42,6 +50,32 @@ func CreateJWT(userId uuid.UUID, email, username, role string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
 	ss, err := token.SignedString(secret)
+
+	if err != nil {
+		return "", err
+	}
+
+	return ss, nil
+}
+
+func CreateWSJWT(userId, sessionId uuid.UUID) (string, error) {
+	if len(wsSecret) == 0 {
+		return "", fmt.Errorf("failed to get jwt secret key")
+	}
+
+	claims := WSClaims{
+		UserId:    userId,
+		SessionId: sessionId,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(3 * time.Minute)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Issuer:    "MindSyncr",
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
+	ss, err := token.SignedString(wsSecret)
 
 	if err != nil {
 		return "", err

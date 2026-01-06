@@ -20,6 +20,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	wsSecret := os.Getenv("WS_SECRET")
+	if len(wsSecret) == 0 {
+		log.Fatal("failed to get WS_SECRET from .env")
+	}
+
+	utils.JWTInit(wsSecret)
+
 	app := app.NewApp(redisClient)
 
 	srv := &http.Server{

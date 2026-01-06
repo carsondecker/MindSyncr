@@ -74,6 +74,29 @@ func (q *Queries) CheckSessionActive(ctx context.Context, id uuid.UUID) (int32, 
 	return column_1, err
 }
 
+const checkSessionMembership = `-- name: CheckSessionMembership :one
+SELECT 1
+FROM sessions s
+LEFT JOIN session_memberships sm
+    ON s.id = sm.session_id
+    AND sm.user_id = $2
+WHERE s.id = $1
+    AND (s.owner_id = $2 OR sm.user_id IS NOT NULL)
+LIMIT 1
+`
+
+type CheckSessionMembershipParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) CheckSessionMembership(ctx context.Context, arg CheckSessionMembershipParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, checkSessionMembership, arg.ID, arg.UserID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const checkSessionMembershipOnly = `-- name: CheckSessionMembershipOnly :one
 SELECT 1
 FROM sessions s

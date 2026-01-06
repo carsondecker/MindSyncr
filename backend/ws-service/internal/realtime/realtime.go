@@ -4,7 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/google/uuid"
+	"github.com/carsondecker/MindSyncr-WS/internal/utils"
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/websocket"
 )
 
@@ -15,23 +16,11 @@ var upgrader = websocket.Upgrader{
 }
 
 func (h *Hub) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
-	userIdStr := r.Header.Get("UserId")
-	sessionIdStr := r.Header.Get("SessionId")
+	validate := validator.New(validator.WithRequiredStructEnabled())
 
-	if userIdStr == "" || sessionIdStr == "" {
-		http.Error(w, "Missing required headers", http.StatusBadRequest)
-		return
-	}
-
-	userId, err := uuid.Parse(userIdStr)
-	if err != nil || userId == uuid.Nil {
-		http.Error(w, "Invalid user id", http.StatusBadRequest)
-		return
-	}
-
-	sessionId, err := uuid.Parse(sessionIdStr)
-	if err != nil || userId == uuid.Nil {
-		http.Error(w, "Invalid session id", http.StatusBadRequest)
+	claims, sErr := utils.GetClaims(r, validate)
+	if sErr != nil {
+		utils.SError(w, sErr)
 		return
 	}
 
@@ -42,7 +31,7 @@ func (h *Hub) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("New WebSocket connection established")
 
-	client := NewClient(userId, sessionId, conn, h)
+	client := NewClient(claims.UserId, claims.SessionId, conn, h)
 
 	h.Register <- client
 }

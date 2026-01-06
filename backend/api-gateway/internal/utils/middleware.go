@@ -194,6 +194,36 @@ func (h *MiddlewareHandler) CheckSessionMembershipOnly(next http.Handler) http.H
 	})
 }
 
+// TODO: update error handling to give a different error if no rows are returned
+func (h *MiddlewareHandler) CheckSessionMembership(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		raw := ctx.Value(UserContextKey)
+		claims, ok := raw.(*Claims)
+		if !ok || claims == nil {
+			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
+			return
+		}
+
+		sessionId, sErr := GetUUIDPathValue(r, "session_id")
+		if sErr != nil {
+			SError(w, sErr)
+			return
+		}
+
+		_, err := h.cfg.Queries.CheckSessionMembership(ctx, sqlc.CheckSessionMembershipParams{
+			ID:     sessionId,
+			UserID: claims.UserId,
+		})
+		if err != nil {
+			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (h *MiddlewareHandler) CheckSessionActive(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessionId, sErr := GetUUIDPathValue(r, "session_id")
