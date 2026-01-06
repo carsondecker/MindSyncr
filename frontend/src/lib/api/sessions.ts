@@ -14,6 +14,16 @@ export async function getSessions(room_id: string): Promise<Array<Session>> {
     return response
 }
 
+export async function getSession(session_id: string): Promise<Session> {
+    const data = await apiFetch<Array<Session>>(`/rooms/${session_id}/sessions`, {
+        method: "GET",
+    })
+
+    const response = sessionSchema.parse(data)
+
+    return response
+}
+
 export async function deleteSession(session_id: string): Promise<void> {
     await apiFetch<void>(`/sessions/${session_id}`, {
         method: "DELETE",
