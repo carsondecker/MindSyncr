@@ -1,19 +1,29 @@
+import type { ComprehensionScore } from "../api/models/comprehensionScores";
 import type { Event } from "./models/events";
 import type { EventState } from "./models/eventState";
 
-export function eventReducer(state: EventState, action: Event) {
+export const initialEventState: EventState = {
+  scores: {
+    history: [],
+    latest: {} as Record<string, ComprehensionScore>
+  },
+}
+
+export function eventReducer(prevState: EventState, action: Event) {
     switch (action.entity) {
         case "comprehension_scores":
             switch (action.eventType) {
                 case "created":
-                    const score = action.data
+                    const score = action.data as ComprehensionScore
                     return {
-                        ...state,
+                        ...prevState,
                         scores: {
-                            history: [...state.scores.history, score],
-                            latest: { ...state.scores.latest, [action.actorId]: score }
+                            history: [...prevState.scores.history, score],
+                            latest: { ...prevState.scores.latest, [action.actorId]: score }
                         }
                     }
             }
     }
+
+    return prevState
 }

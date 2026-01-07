@@ -99,6 +99,8 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 		middlewareHandler.CheckSessionMembership(http.HandlerFunc(wsHandler.HandleGetWSTicket)),
 	))
 
+	router.Handle("/ws/", http.StripPrefix("/ws", wsRouter))
+
 	return baseRouter
 }
 
