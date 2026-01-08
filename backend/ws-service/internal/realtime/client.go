@@ -2,6 +2,8 @@ package realtime
 
 import (
 	"log"
+	"sync"
+	"time"
 
 	"github.com/carsondecker/MindSyncr-WS/internal/utils"
 	"github.com/google/uuid"
@@ -14,6 +16,7 @@ type Client struct {
 	Conn      *websocket.Conn
 	SendChan  chan utils.Event
 	Close     chan struct{}
+	closeOnce sync.Once
 	Hub       *Hub
 }
 
@@ -30,19 +33,22 @@ func NewClient(id, sessionId uuid.UUID, conn *websocket.Conn, hub *Hub) *Client 
 
 // TODO: redo close with context?
 func (c *Client) close() {
-	select {
-	case <-c.Close:
-		return
-	default:
+	c.closeOnce.Do(func() {
 		close(c.Close)
 		c.Hub.Unregister <- c
 		c.Conn.Close()
-		log.Println("Websocket connection closed.")
-	}
+		log.Println("WebSocket connection closed.")
+	})
 }
 
 func (c *Client) ReadPump() {
 	defer c.close()
+
+	c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	c.Conn.SetPongHandler(func(string) error {
+		c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
 
 	for {
 		select {
@@ -51,6 +57,7 @@ func (c *Client) ReadPump() {
 		default:
 			_, _, err := c.Conn.ReadMessage()
 			if err != nil {
+				log.Println("ReadPump error:", err)
 				return
 			}
 		}
@@ -60,12 +67,24 @@ func (c *Client) ReadPump() {
 func (c *Client) WritePump() {
 	defer c.close()
 
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-c.Close:
 			return
 		case event := <-c.SendChan:
-			c.Conn.WriteJSON(event)
+			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if err := c.Conn.WriteJSON(event); err != nil {
+				log.Println("WriteJSON error:", err)
+				return
+			}
+		case <-ticker.C:
+			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
 		}
 	}
 }

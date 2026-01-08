@@ -1,5 +1,11 @@
 package app
 
+import (
+	"net/http"
+
+	"github.com/carsondecker/MindSyncr-WS/internal/utils"
+)
+
 func (a *App) registerRoutes() {
-	a.Router.HandleFunc("/ws", a.Hub.WebSocketHandler).Methods("GET")
+	a.Router.Handle("/ws", utils.AuthMiddleware(http.HandlerFunc(a.Hub.WebSocketHandler)))
 }

@@ -82,6 +82,8 @@ func WriteError(w http.ResponseWriter, statusCode int, code string, incErr strin
 		return fmt.Errorf("failed to write response: %w", err)
 	}
 
+	log.Println("Error Response:", string(b))
+
 	return nil
 }
 

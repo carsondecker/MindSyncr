@@ -13,10 +13,12 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin:     func(r *http.Request) bool { return true },
+	Subprotocols:    []string{"mindsyncr-ws"},
 }
 
 func (h *Hub) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	validate := validator.New(validator.WithRequiredStructEnabled())
+	utils.RegisterCustomValidations(validate)
 
 	claims, sErr := utils.GetClaims(r, validate)
 	if sErr != nil {
@@ -34,4 +36,6 @@ func (h *Hub) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	client := NewClient(claims.UserId, claims.SessionId, conn, h)
 
 	h.Register <- client
+
+	<-client.Close
 }

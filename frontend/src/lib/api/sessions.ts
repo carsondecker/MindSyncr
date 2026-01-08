@@ -15,7 +15,7 @@ export async function getSessions(room_id: string): Promise<Array<Session>> {
 }
 
 export async function getSession(session_id: string): Promise<Session> {
-    const data = await apiFetch<Session>(`/rooms/${session_id}/sessions`, {
+    const data = await apiFetch<Session>(`/sessions/${session_id}`, {
         method: "GET",
     })
 

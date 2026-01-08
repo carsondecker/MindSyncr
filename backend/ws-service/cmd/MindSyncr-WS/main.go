@@ -11,6 +11,9 @@ import (
 )
 
 func main() {
+	log.SetOutput(os.Stdout)
+	log.Println("Started MindSyncr WS service.")
+
 	redisAddr := os.Getenv("REDIS_URL")
 	if len(redisAddr) == 0 {
 		log.Fatal("failed to get REDIS_URL from .env")
@@ -35,6 +38,8 @@ func main() {
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
+
+	log.Println("Build succeeded, starting MindSyncr WS server...")
 
 	log.Fatal(srv.ListenAndServe())
 }

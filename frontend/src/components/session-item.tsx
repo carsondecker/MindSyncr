@@ -50,7 +50,7 @@ export function SessionItem({ id, room_id, sessionName, is_active, owner_id, is_
         {is_owner && (
           <>
               <Button size="sm">
-                <Link to={`sessions/${id}`}>Open</Link>
+                <Link to={`/sessions/${id}`}>Open</Link>
               </Button>
               <Button variant="destructive" size="sm" onClick={deleteSelf}>
                   Delete
@@ -66,7 +66,7 @@ export function SessionItem({ id, room_id, sessionName, is_active, owner_id, is_
           <>
             {!is_member && (
               <Button variant="outline" size="sm">
-                <Link to={`sessions/${id}`}>Rejoin Session</Link>
+                <Link to={`/sessions/${id}`}>Rejoin Session</Link>
               </Button>
             )}
             {is_member && (

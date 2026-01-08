@@ -162,7 +162,7 @@ SELECT s.id, s.room_id, s.owner_id, s.name, s.is_active, s.started_at, s.ended_a
 FROM sessions s
 LEFT JOIN session_memberships sm
     ON s.id = sm.session_id
-    AND s.user_id = $2
+    AND sm.user_id = $2
 WHERE id = $1
 `
 

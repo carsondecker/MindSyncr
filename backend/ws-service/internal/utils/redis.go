@@ -12,14 +12,14 @@ import (
 )
 
 type Event struct {
-	EventID   uuid.UUID
-	EventType string
-	Entity    string
-	EntityID  uuid.UUID
-	SessionID uuid.UUID
-	ActorID   uuid.UUID
-	Timestamp time.Time
-	Data      any
+	EventID   uuid.UUID `json:"event_id"`
+	EventType string    `json:"event_type"`
+	Entity    string    `json:"entity"`
+	EntityID  uuid.UUID `json:"entity_id"`
+	SessionID uuid.UUID `json:"session_id"`
+	ActorID   uuid.UUID `json:"actor_id"`
+	Timestamp time.Time `json:"timestamp"`
+	Data      any       `json:"data"`
 }
 
 type RedisClient struct {

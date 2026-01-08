@@ -2,12 +2,12 @@ import z from "zod";
 import { comprehensionScoreSchema } from "../../api/models/comprehensionScores";
 
 export const eventSchema = z.object({
-  eventId: z.uuid(),
-  eventType: z.string(),
+  event_id: z.uuid(),
+  event_type: z.string(),
   entity: z.string(),
-  entityId: z.uuid(),
-  sessionId: z.uuid(),
-  actorId: z.uuid(),
+  entity_id: z.uuid(),
+  session_id: z.uuid(),
+  actor_id: z.uuid(),
   timestamp: z.number(),
   data: z.unknown(),
 })
