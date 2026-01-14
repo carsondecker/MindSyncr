@@ -1,7 +1,7 @@
 import { RoomCard } from "@/components/room-card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { createRoomRequestSchema, type CreateRoomRequest, type Room } from "@/lib/api/models/rooms"
+import { type CreateRoomRequest, type Room } from "@/lib/api/models/rooms"
 import { useAuth } from "@/lib/context/AuthContext"
 import useRoomsApi from "@/lib/hooks/useRoomsApi"
 import { useMutation, useQuery } from "@tanstack/react-query"

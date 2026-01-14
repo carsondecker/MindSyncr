@@ -12,11 +12,32 @@ export default function RoomDetailsPage() {
     const { room_id } = useParams()
 
     const { getRoom } = useRoomsApi()
-    const { getSessions } = useSessionsApi()
+    const { getSessions, deleteSession } = useSessionsApi()
 
     const roomQuery = useQuery({ queryKey: ['rooms', room_id], queryFn: () => getRoom(room_id!), enabled: !!room_id })
     const sessionsQuery = useQuery({ queryKey: ['sessions', room_id], queryFn: () => getSessions(room_id!), enabled: !!room_id })
     
+    const deleteSessionQuery = useMutation({
+            mutationKey: ['deleteRoom'],
+            mutationFn: (session_id: string) => deleteSession(session_id),
+            onMutate: async (session_id, context) => {
+                await context.client.cancelQueries({ queryKey: ['sessions', room_id] })
+    
+                const prevRooms = context.client.getQueryData(['sessions', room_id])
+    
+                context.client.setQueryData(['sessions', room_id], (old: Session[]) => old.filter((s: Session) => s.id !== session_id))
+    
+                return { prevRooms }
+            },
+            onError: (err, variables, onMutateResult, context) => {
+                context.client.setQueryData(['sessions', room_id], onMutateResult?.prevRooms)
+            },
+            onSettled: (data, err, variables, onMutateResult, context) => {
+                context.client.invalidateQueries({ queryKey: ['sessions', room_id] })
+            }
+        })
+    
+
     const deleteItem = (session_id: string) => {
         useMutation({})
         
@@ -55,18 +76,11 @@ export default function RoomDetailsPage() {
             <p>{roomQuery.data.description}</p>
 
             {sessionsQuery.data.map((session) => (
-                <SessionItem
+                <SessionCard
                     key={session.id}
-                    session_id={session.id}
-                    room_id={room_id!}
-                    sessionName={session.name}
-                    is_active={session.is_active}
-                    owner_id={session.owner_id}
-                    ended_at={session.ended_at}
-                    is_owner={session.is_owner}
-                    is_member={session.is_member}
-                    deleteItem={deleteItem}
-                    endItem={endItem}
+                    session={session}
+                    onDelete={deleteItem}
+                    onEnd={endItem}
                 />
             ))}
         </>
