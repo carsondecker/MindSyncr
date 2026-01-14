@@ -4,12 +4,10 @@ import { getWSTicket } from "../api/ws"
 import type { WSTicket } from "../api/models/ws"
 
 export function useWSTicket() {
-  const { run } = useApi()
+  const { apiFetch } = useApi()
 
   return useCallback(
-    async (sessionId: string): Promise<WSTicket> => {
-      return run(() => getWSTicket(sessionId))
-    },
-    [run]
+    async (sessionId: string): Promise<WSTicket> => getWSTicket(apiFetch, sessionId),
+    [apiFetch]
   )
 }

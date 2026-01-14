@@ -1,54 +1,25 @@
-import { type Session } from "@/lib/api/models/sessions";
-import { getSession } from "@/lib/api/sessions";
-import { useApi } from "@/lib/hooks/useApi";
 import { useSessionEvents } from "@/lib/hooks/useSessionEvents";
+import useSessionsApi from "@/lib/hooks/useSessionsApi";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 export default function SessionsPage() {
-    const { id } = useParams()
-    const { run, loading, error } = useApi()
-    const { state, connected, status } = useSessionEvents(id ?? "")
+    const { session_id } = useParams()
+    const { state, connected, status } = useSessionEvents(session_id ?? "")
 
-    const [session, setSession] = useState<Session | null>(null)
+    const { getSession } = useSessionsApi()
 
-    useQuery({
-        queryKey: ['sessions'],
-        queryFn: () => getSession(id),
-        enabled: !!id,
-        retry: (failureCount, err) => {
-                    if (failureCount > 3) return false
-                    
-                    if (err instanceof ApiError) {
-                        if (err.code === "INVALID_ACCESS_TOKEN") {
-                            refreshUser()
-                            return true
-                        } else if (err.code === "MISSING_ACCESS_TOKEN") {
-                            logoutUser()
-                            return false
-                        }
-                    }
-                    
-                    return true
-                }
+    const { isPending, isError, data: session, error } = useQuery({
+        queryKey: ['sessions', session_id],
+        queryFn: () => getSession(session_id!),
+        enabled: !!session_id
     })
-
-    useEffect(() => {
-        if (!id) return
-
-        run(async () => {
-            const sessionRes = await getSession(id)
-
-            setSession(sessionRes)
-        })
-    }, [id, run])
     
-    if (loading) {
+    if (isPending) {
         return <div>Loading…</div>
     }
 
-    if (error) {
+    if (isError) {
         return <div>Error: {error.message}</div>
     }
 

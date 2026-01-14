@@ -1,9 +1,9 @@
 import z from "zod"
-import { apiFetch } from "./client"
-import { roomSchema, type Room } from "./models/rooms"
+import { createRoomRequestSchema, roomSchema, type CreateRoomRequest, type Room } from "./models/rooms"
+import type { ApiFetch } from "./client"
 
-export async function getOwnedRooms(): Promise<Array<Room>> {
-    const data = await apiFetch<Array<Room>>("/rooms/?" + new URLSearchParams({ role: "owner" }), {
+export async function getOwnedRoomsApi(apiFetch: ApiFetch): Promise<Room[]> {
+    const data = await apiFetch<Room[]>("/rooms/?" + new URLSearchParams({ role: "owner" }), {
         method: "GET",
     })
 
@@ -14,8 +14,8 @@ export async function getOwnedRooms(): Promise<Array<Room>> {
     return response
 }
 
-export async function getJoinedRooms(): Promise<Array<Room>> {
-    const data = await apiFetch<Array<Room>>("/rooms/?" + new URLSearchParams({ role: "member" }), {
+export async function getJoinedRoomsApi(apiFetch: ApiFetch): Promise<Room[]> {
+    const data = await apiFetch<Room[]>("/rooms/?" + new URLSearchParams({ role: "member" }), {
         method: "GET",
     })
 
@@ -26,12 +26,31 @@ export async function getJoinedRooms(): Promise<Array<Room>> {
     return response
 }
 
-export async function getRoom(id: string): Promise<Room> {
-  const data = await apiFetch<Room>(`/rooms/${id}`, {
+export async function getRoomApi(apiFetch: ApiFetch, room_id: string): Promise<Room> {
+  const data = await apiFetch<Room>(`/rooms/${room_id}`, {
     method: "GET",
   })
 
   const response = roomSchema.parse(data)
 
   return response
+}
+
+export async function createRoomApi(apiFetch: ApiFetch, input: CreateRoomRequest) {
+  const validInput = createRoomRequestSchema.parse(input)
+  
+  const data = await apiFetch<CreateRoomRequest>("/rooms/", {
+    method: "POST",
+    body: JSON.stringify(validInput),
+  })
+
+  const response = roomSchema.parse(data)
+
+  return response
+}
+
+export async function deleteRoomApi(apiFetch: ApiFetch, room_id: string): Promise<void> {
+    await apiFetch<void>(`/rooms/${room_id}`, {
+        method: "DELETE",
+    })
 }

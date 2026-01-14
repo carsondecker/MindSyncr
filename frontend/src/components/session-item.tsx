@@ -1,12 +1,10 @@
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router-dom"
 import { Item, ItemActions, ItemContent, ItemTitle } from "./ui/item"
-import { useApi } from "@/lib/hooks/useApi"
-import { useEffect } from "react"
-import { deleteSession, endSession } from "@/lib/api/sessions"
+import useSessionsApi from "@/lib/hooks/useSessionsApi"
 
 type SessionItemProps = {
-    id: string
+    session_id: string
     room_id: string
     sessionName: string
     is_active: boolean
@@ -14,31 +12,11 @@ type SessionItemProps = {
     ended_at: Date | null
     is_owner: boolean
     is_member: boolean
-    removeItem: (session_id: string) => void
+    deleteItem: (session_id: string) => void
     endItem: (session_id: string) => void
 }
 
-export function SessionItem({ id, room_id, sessionName, is_active, owner_id, is_owner, is_member, ended_at, removeItem, endItem }: SessionItemProps) {
-  const { run, loading, error } = useApi()
-  
-  const deleteSelf = async () => {
-    try {
-      await run(() => deleteSession(id))
-      removeItem(id)
-    } catch (err) {
-
-    }
-  }
-
-  const endSelf = async () => {
-    try {
-      await run(() => endSession(id))
-      endItem(id)
-    } catch (err) {
-
-    }
-  }
-
+export function SessionItem({ session_id, room_id, sessionName, is_active, owner_id, is_owner, is_member, ended_at, deleteItem, endItem }: SessionItemProps) {
   return (
     <Item variant="outline">
       <ItemContent>
@@ -50,13 +28,13 @@ export function SessionItem({ id, room_id, sessionName, is_active, owner_id, is_
         {is_owner && (
           <>
               <Button size="sm">
-                <Link to={`/sessions/${id}`}>Open</Link>
+                <Link to={`/sessions/${session_id}`}>Open</Link>
               </Button>
-              <Button variant="destructive" size="sm" onClick={deleteSelf}>
+              <Button variant="destructive" size="sm" onClick={() => deleteItem}>
                   Delete
               </Button>
               {is_active && !ended_at && (
-                  <Button size="sm" onClick={endSelf}>
+                  <Button size="sm" onClick={() => endItem}>
                       End Session
                   </Button>
               )}
@@ -66,7 +44,7 @@ export function SessionItem({ id, room_id, sessionName, is_active, owner_id, is_
           <>
             {!is_member && (
               <Button variant="outline" size="sm">
-                <Link to={`/sessions/${id}`}>Rejoin Session</Link>
+                <Link to={`/sessions/${session_id}`}>Rejoin Session</Link>
               </Button>
             )}
             {is_member && (

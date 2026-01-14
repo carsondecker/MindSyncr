@@ -5,9 +5,11 @@ import { Item, ItemActions, ItemContent, ItemTitle } from "./ui/item"
 type RoomItemProps = {
     id: string
     roomName: string
+    joinCode: string
+    onDelete: (room_id: string) => void
 }
 
-export function RoomItem({id, roomName}: RoomItemProps) {
+export function RoomItem({id, roomName, joinCode}: RoomItemProps) {
   return (
     <Item variant="outline">
       <ItemContent>

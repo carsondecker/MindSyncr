@@ -1,74 +1,71 @@
 import { SessionItem } from "@/components/session-item"
-import type { Room } from "@/lib/api/models/rooms"
 import type { Session } from "@/lib/api/models/sessions"
-import { getRoom } from "@/lib/api/rooms"
-import { getSessions } from "@/lib/api/sessions"
-import { useApi } from "@/lib/hooks/useApi"
-import { useEffect, useState } from "react"
+import useRoomsApi from "@/lib/hooks/useRoomsApi"
+import useSessionsApi from "@/lib/hooks/useSessionsApi"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useParams } from "react-router-dom"
 
 
 export default function RoomDetailsPage() {
-    const { id } = useParams()
+    const queryClient = useQueryClient()
 
-    const { run, loading, error } = useApi()
+    const { room_id } = useParams()
 
-    const [room, setRoom] = useState<Room | null>(null)
-    const [sessions, setSessions] = useState<Array<Session> | null>(null)
+    const { getRoom } = useRoomsApi()
+    const { getSessions } = useSessionsApi()
 
-    useEffect(() => {
-        if (!id) return
-
-        run(async () => {
-            const [roomRes, sessionsRes] = await Promise.all([
-                getRoom(id),
-                getSessions(id),
-            ])
-
-            setRoom(roomRes)
-            setSessions(sessionsRes)
-        })
-    }, [id, run])
+    const roomQuery = useQuery({ queryKey: ['rooms', room_id], queryFn: () => getRoom(room_id!), enabled: !!room_id })
+    const sessionsQuery = useQuery({ queryKey: ['sessions', room_id], queryFn: () => getSessions(room_id!), enabled: !!room_id })
     
-    const removeItem = (session_id: string) => {
-        setSessions((prev) =>
-            prev ? prev.filter((s) => s.id !== session_id) : prev
+    const deleteItem = (session_id: string) => {
+        useMutation({})
+        
+        queryClient.setQueryData(
+            ['sessions', room_id],
+            (prev: Session[] | undefined) =>
+                prev?.filter((s) => s.id !== session_id)
         )
     }
 
     const endItem = (session_id: string) => {
-        setSessions(prev => 
-            prev ? prev.map(s =>
-                s.id === session_id ? { ...s, is_active: false } : s
-            ) : null
+
+
+        queryClient.setQueryData(
+            ['sessions', room_id],
+            (prev: Session[] | undefined) =>
+                prev?.map((s) => s.id === session_id ? { ...s, is_active: false } : s)
         )
     }
 
-    if (loading) {
+    if (roomQuery.isPending || sessionsQuery.isPending) {
         return <div>Loading…</div>
     }
 
-    if (error) {
-        return <div>Error: {error.message}</div>
+    if (roomQuery.isError) {
+        return <div>Error: {roomQuery.error.message}</div>
+    }
+    
+    if (sessionsQuery.isError) {
+        return <div>Error: {sessionsQuery.error.message}</div>
     }
 
     return (
         <>
-            <h1>{room?.name}</h1>
-            <p>{room?.description}</p>
+            <h1>{roomQuery.data.name}</h1>
+            <p>{roomQuery.data.description}</p>
 
-            {sessions?.map((session) => (
+            {sessionsQuery.data.map((session) => (
                 <SessionItem
                     key={session.id}
-                    id={session.id}
-                    room_id={id!}
+                    session_id={session.id}
+                    room_id={room_id!}
                     sessionName={session.name}
                     is_active={session.is_active}
                     owner_id={session.owner_id}
                     ended_at={session.ended_at}
                     is_owner={session.is_owner}
                     is_member={session.is_member}
-                    removeItem={removeItem}
+                    deleteItem={deleteItem}
                     endItem={endItem}
                 />
             ))}

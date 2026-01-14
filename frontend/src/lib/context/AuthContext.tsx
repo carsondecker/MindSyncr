@@ -29,8 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const data = await refresh()
-      setUser(data)
+      await refresh()
+      loadUser()
     } catch (err) {
       setUser(null)
       throw err

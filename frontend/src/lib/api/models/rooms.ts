@@ -11,3 +11,10 @@ export const roomSchema = z.object({
 })
 
 export type Room = z.infer<typeof roomSchema>
+
+export const createRoomRequestSchema = z.object({
+    name: z.string(),
+    description: z.string().optional()
+})
+
+export type CreateRoomRequest = z.infer<typeof createRoomRequestSchema>
