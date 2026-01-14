@@ -121,18 +121,18 @@ func (h *RoomsHandler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) 
 func (h *RoomsHandler) HandleJoinRoom(w http.ResponseWriter, r *http.Request) {
 	utils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
-		func(claims *utils.Claims) (JoinRoomResponse, *utils.ServiceError) {
+		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
 			joinCode, sErr := utils.GetPathValue(r, "join_code")
 			if sErr != nil {
-				return JoinRoomResponse{}, sErr
+				return struct{}{}, sErr
 			}
 
-			res, sErr := h.joinRoomService(r.Context(), claims.UserId, joinCode)
+			sErr = h.joinRoomService(r.Context(), claims.UserId, joinCode)
 			if sErr != nil {
-				return JoinRoomResponse{}, sErr
+				return struct{}{}, sErr
 			}
 
-			return res, nil
+			return struct{}{}, nil
 		},
 	)
 }

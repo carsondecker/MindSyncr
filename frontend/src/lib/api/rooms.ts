@@ -50,7 +50,13 @@ export async function createRoomApi(apiFetch: ApiFetch, input: CreateRoomRequest
 }
 
 export async function deleteRoomApi(apiFetch: ApiFetch, room_id: string): Promise<void> {
-    await apiFetch<void>(`/rooms/${room_id}`, {
-        method: "DELETE",
-    })
+  await apiFetch<void>(`/rooms/${room_id}`, {
+    method: "DELETE",
+  })
+}
+
+export async function joinRoomApi(apiFetch: ApiFetch, join_code: string): Promise<void> {
+  await apiFetch<void>(`/rooms/${join_code}/join`, {
+    method: "POST",
+  })
 }

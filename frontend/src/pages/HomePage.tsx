@@ -121,12 +121,12 @@ export default function HomePage() {
                 </Tabs>
 
                 {activeTab === "owned" ? (
-                    <Button onClick={handleCreateRoom} className="gap-2">
+                    <Button className="gap-2">
                         <Plus className="h-4 w-4" />
                         Create Room
                     </Button>
                     ) : (
-                    <Button onClick={handleJoinRoom} className="gap-2">
+                    <Button className="gap-2">
                         <UserPlus className="h-4 w-4" />
                         Join Room
                     </Button>

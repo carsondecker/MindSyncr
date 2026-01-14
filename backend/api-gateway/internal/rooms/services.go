@@ -164,49 +164,45 @@ func (h *RoomsHandler) deleteRoomService(ctx context.Context, userId, roomId uui
 	return nil
 }
 
-func (h *RoomsHandler) joinRoomService(ctx context.Context, userId uuid.UUID, joinCode string) (JoinRoomResponse, *utils.ServiceError) {
+func (h *RoomsHandler) joinRoomService(ctx context.Context, userId uuid.UUID, joinCode string) *utils.ServiceError {
 	ownerId, err := h.cfg.Queries.GetRoomOwnerIdByJoinCode(ctx, joinCode)
 	if err != nil {
-		return JoinRoomResponse{}, &utils.ServiceError{
+		return &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
 			Code:       utils.ErrDbtxFail,
 			Message:    err.Error(),
 		}
 	}
 	if userId == ownerId {
-		return JoinRoomResponse{}, &utils.ServiceError{
+		return &utils.ServiceError{
 			StatusCode: http.StatusForbidden,
 			Code:       utils.ErrForbidden,
 			Message:    "users cannot join a room they own",
 		}
 	}
 
-	roomId, err := h.cfg.Queries.JoinRoom(ctx, sqlc.JoinRoomParams{
+	_, err = h.cfg.Queries.JoinRoom(ctx, sqlc.JoinRoomParams{
 		UserID:   userId,
 		JoinCode: joinCode,
 	})
 	if err != nil {
 		if pgErr, ok := err.(*pq.Error); ok {
 			if pgErr.Code == "23505" {
-				return JoinRoomResponse{}, &utils.ServiceError{
+				return &utils.ServiceError{
 					StatusCode: http.StatusBadRequest,
 					Code:       utils.ErrBadRequest,
 					Message:    "this user has already joined this room",
 				}
 			}
 		}
-		return JoinRoomResponse{}, &utils.ServiceError{
+		return &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
 			Code:       utils.ErrDbtxFail,
 			Message:    err.Error(),
 		}
 	}
 
-	res := JoinRoomResponse{
-		RoomId: roomId,
-	}
-
-	return res, nil
+	return nil
 }
 
 func (h *RoomsHandler) leaveRoomService(ctx context.Context, userId, roomId uuid.UUID) *utils.ServiceError {
