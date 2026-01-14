@@ -1,4 +1,4 @@
-import { SessionItem } from "@/components/session-item"
+import { SessionCard } from "@/components/session-card"
 import type { Session } from "@/lib/api/models/sessions"
 import useRoomsApi from "@/lib/hooks/useRoomsApi"
 import useSessionsApi from "@/lib/hooks/useSessionsApi"

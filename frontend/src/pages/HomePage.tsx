@@ -1,4 +1,4 @@
-import { RoomItem } from "@/components/room-item"
+import { RoomCard } from "@/components/room-card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createRoomRequestSchema, type CreateRoomRequest, type Room } from "@/lib/api/models/rooms"
@@ -184,7 +184,7 @@ export default function HomePage() {
                 </h1>
                 <p className="text-gray-600">Manage your learning rooms</p>
             </div>
-            <div className="mb-6">
+            <div className="mb-6 flex justify-between">
                 <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as "owned" | "joined")}>
                     <TabsList>
                         <TabsTrigger value="owned">My Rooms</TabsTrigger>
@@ -208,11 +208,12 @@ export default function HomePage() {
             <div className="space-y-3">
                 {rooms && rooms.length > 0 ? (
                     rooms.map((room, i) => (
-                        <RoomItem
+                        <RoomCard
                             key={i}
                             id={room.id}
                             roomName={room.name}
                             joinCode={room.join_code || "ABC123"}
+                            isOwned={activeTab === "owned"}
                             onDelete={handleDeleteRoom}
                             onLeave={handleLeaveRoom}
                         />
