@@ -13,6 +13,13 @@ export default function HomePage() {
     const { user } = useAuth()
     const { getJoinedRooms, getOwnedRooms, createRoom, deleteRoom } = useRoomsApi()
     const [activeTab, setActiveTab] = useState<"owned" | "joined">("owned")
+    const [showCreateRoom, setShowCreateRoom] = useState(false)
+    const [showJoinRoom, setShowJoinRoom] = useState(false)
+    const [joinMethod, setJoinMethod] = useState<"code" | "qr">("code")
+    const [joinCode, setJoinCode] = useState("")
+    const [roomName, setRoomName] = useState("")
+    const [roomDescription, setRoomDescription] = useState("")
+
 
     const ownedRoomsQuery = useQuery({
         queryKey: ['rooms'],
@@ -46,7 +53,14 @@ export default function HomePage() {
         })
     }
 
-    const handleCreateRoom = (room_id: string) => {
+    const handleCreateRoom = () => {
+        setShowCreateRoom(true)
+        setShowCreateRoom(false)
+        setRoomName("")
+        setRoomDescription("")
+    }
+
+    const handleCreateRoomSubmit = (room_id: string) => {
         useMutation({
             mutationKey: ['addRoom'],
             mutationFn: createRoom,
@@ -68,8 +82,8 @@ export default function HomePage() {
         })
     }
 
-    const handleJoinRoom = (join_code: string) => {
-        
+    const handleJoinRoom = () => {
+        setShowJoinRoom(true)
     }
 
     if (ownedRoomsQuery.isPending || joinedRoomsQuery.isPending) {
@@ -121,12 +135,12 @@ export default function HomePage() {
                 </Tabs>
 
                 {activeTab === "owned" ? (
-                    <Button className="gap-2">
+                    <Button onClick={handleCreateRoom} className="gap-2">
                         <Plus className="h-4 w-4" />
                         Create Room
                     </Button>
                     ) : (
-                    <Button className="gap-2">
+                    <Button onClick={handleJoinRoom} className="gap-2">
                         <UserPlus className="h-4 w-4" />
                         Join Room
                     </Button>
