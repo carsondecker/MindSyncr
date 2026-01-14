@@ -1,5 +1,5 @@
 import { useApi } from "./useApi";
-import { createRoomApi, deleteRoomApi, getJoinedRoomsApi, getOwnedRoomsApi, getRoomApi, joinRoomApi } from "../api/rooms";
+import { createRoomApi, deleteRoomApi, getJoinedRoomsApi, getOwnedRoomsApi, getRoomApi, joinRoomApi, leaveRoomApi } from "../api/rooms";
 import { useCallback } from "react";
 import type { CreateRoomRequest } from "../api/models/rooms";
 
@@ -18,5 +18,7 @@ export default function useRoomsApi() {
 
     const joinRoom = useCallback((join_code: string) => joinRoomApi(apiFetch, join_code), [apiFetch])
 
-    return { getOwnedRooms, getJoinedRooms, getRoom, createRoom, deleteRoom, joinRoom }
+    const leaveRoom = useCallback((room_id: string) => leaveRoomApi(apiFetch, room_id), [apiFetch])
+
+    return { getOwnedRooms, getJoinedRooms, getRoom, createRoom, deleteRoom, joinRoom, leaveRoom }
 }

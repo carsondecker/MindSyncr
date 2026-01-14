@@ -60,3 +60,9 @@ export async function joinRoomApi(apiFetch: ApiFetch, join_code: string): Promis
     method: "POST",
   })
 }
+
+export async function leaveRoomApi(apiFetch: ApiFetch, room_id: string): Promise<void> {
+  await apiFetch<void>(`/rooms/${room_id}/leave`, {
+    method: "POST",
+  })
+}

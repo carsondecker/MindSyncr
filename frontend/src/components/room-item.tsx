@@ -7,9 +7,10 @@ type RoomItemProps = {
     roomName: string
     joinCode: string
     onDelete: (room_id: string) => void
+    onLeave: (room_id: string) => void
 }
 
-export function RoomItem({id, roomName, joinCode}: RoomItemProps) {
+export function RoomItem({id, roomName, joinCode, onDelete, onLeave}: RoomItemProps) {
   return (
     <Item variant="outline">
       <ItemContent>
@@ -18,7 +19,7 @@ export function RoomItem({id, roomName, joinCode}: RoomItemProps) {
         </ItemTitle>
       </ItemContent>
       <ItemActions>
-        <Button variant="destructive" size="sm">
+        <Button onClick={() => onDelete(id)} variant="destructive" size="sm">
           Delete
         </Button>
       </ItemActions>

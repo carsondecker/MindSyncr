@@ -1,17 +1,20 @@
 import { RoomItem } from "@/components/room-item"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { Room } from "@/lib/api/models/rooms"
+import { createRoomRequestSchema, type CreateRoomRequest, type Room } from "@/lib/api/models/rooms"
 import { useAuth } from "@/lib/context/AuthContext"
 import useRoomsApi from "@/lib/hooks/useRoomsApi"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-import { Copy, QrCode, Trash2, LogOut, Plus, UserPlus } from "lucide-react"
-import { data } from "react-router-dom"
+import { Plus, UserPlus, Camera } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function HomePage() {
     const { user } = useAuth()
-    const { getJoinedRooms, getOwnedRooms, createRoom, deleteRoom } = useRoomsApi()
+    const { getJoinedRooms, getOwnedRooms, createRoom, deleteRoom, joinRoom, leaveRoom } = useRoomsApi()
     const [activeTab, setActiveTab] = useState<"owned" | "joined">("owned")
     const [showCreateRoom, setShowCreateRoom] = useState(false)
     const [showJoinRoom, setShowJoinRoom] = useState(false)
@@ -22,68 +25,121 @@ export default function HomePage() {
 
 
     const ownedRoomsQuery = useQuery({
-        queryKey: ['rooms'],
+        queryKey: ['rooms', 'owned'],
         queryFn: getOwnedRooms
     })
 
     const joinedRoomsQuery = useQuery({
-        queryKey: ['rooms'],
+        queryKey: ['rooms', 'joined'],
         queryFn: getJoinedRooms
     })
 
-    const handleDeleteRoom = (room_id: string) => {
-        useMutation({
-            mutationKey: ['deleteRoom'],
-            mutationFn: deleteRoom,
-            onMutate: async (variables, context) => {
+    const addRoomQuery = useMutation({
+        mutationKey: ['addRoom'],
+        mutationFn: (data: CreateRoomRequest) => createRoom(data),
+        /*
+        onMutate: async (newRoom, context) => {
                 await context.client.cancelQueries({ queryKey: ['rooms'] })
 
-                const prevRooms = context.client.getQueryData(['rooms'])
+            const prevRooms = context.client.getQueryData(['rooms'])
 
-                context.client.setQueryData(['rooms'], (old: Room[]) => old.filter((r: Room) => r.id !== room_id))
+            context.client.setQueryData(['rooms'], (old: Room[]) => [...old, newRoom])
 
-                return { prevRooms }
-            },
-            onError: (err, variables, onMutateResult, context) => {
-                context.client.setQueryData(['rooms'], onMutateResult?.prevRooms)
-            },
-            onSettled: (data, err, variables, onMutateResult, context) => {
-                context.client.invalidateQueries({ queryKey: ['rooms'] })
-            }
-        })
+        return { prevRooms }
+        },
+        */
+        onError: (err, variables, onMutateResult, context) => {
+            console.error(err)
+            //context.client.setQueryData(['rooms'], onMutateResult?.prevRooms)
+        },
+        onSettled: (data, err, variables, onMutateResult, context) => {
+            context.client.invalidateQueries({ queryKey: ['rooms'] })
+        }
+    })
+
+    const deleteRoomQuery = useMutation({
+        mutationKey: ['deleteRoom'],
+        mutationFn: (room_id: string) => deleteRoom(room_id),
+        onMutate: async (room_id, context) => {
+            await context.client.cancelQueries({ queryKey: ['rooms', 'owned'] })
+
+            const prevRooms = context.client.getQueryData(['rooms', 'owned'])
+
+            context.client.setQueryData(['rooms', 'owned'], (old: Room[]) => old.filter((r: Room) => r.id !== room_id))
+
+            return { prevRooms }
+        },
+        onError: (err, variables, onMutateResult, context) => {
+            context.client.setQueryData(['rooms', 'owned'], onMutateResult?.prevRooms)
+        },
+        onSettled: (data, err, variables, onMutateResult, context) => {
+            context.client.invalidateQueries({ queryKey: ['rooms', 'owned'] })
+        }
+    })
+
+    const joinRoomQuery = useMutation({
+        mutationKey: ['joinRoom'],
+        mutationFn: (join_code: string) => joinRoom(join_code),
+        //onMutate: ,
+        onError: (err, newRoom, onMutateResult, context) => {
+            console.error(err)
+            //context.client.setQueryData([''], )
+        },
+        onSettled: (data, err, variables, onMutateResult, context) => {
+            context.client.invalidateQueries({ queryKey: ['rooms', 'joined'] })
+        }
+    })
+
+    const leaveRoomQuery = useMutation({
+        mutationKey: ['leaveRoom'],
+        mutationFn: (room_id: string) => leaveRoom(room_id),
+        onMutate: async (room_id, context) => {
+            await context.client.cancelQueries({ queryKey: ['rooms', 'owned'] })
+
+            const prevRooms = context.client.getQueryData(['rooms', 'owned'])
+
+            context.client.setQueryData(['rooms', 'joined'], (old: Room[]) => old.filter((r: Room) => r.id !== room_id))
+
+            return { prevRooms }
+        },
+        onError: (err, variables, onMutateResult, context) => {
+            context.client.setQueryData(['rooms', 'joined'], onMutateResult?.prevRooms)
+        },
+        onSettled: (data, err, variables, onMutateResult, context) => {
+            context.client.invalidateQueries({ queryKey: ['rooms', 'joined'] })
+        }
+    })
+
+    const handleDeleteRoom = (room_id: string) => {
+        deleteRoomQuery.mutate(room_id)
+    }
+
+    const handleLeaveRoom = (room_id: string) => {
+        leaveRoomQuery.mutate(room_id)
     }
 
     const handleCreateRoom = () => {
         setShowCreateRoom(true)
-        setShowCreateRoom(false)
         setRoomName("")
         setRoomDescription("")
     }
 
-    const handleCreateRoomSubmit = (room_id: string) => {
-        useMutation({
-            mutationKey: ['addRoom'],
-            mutationFn: createRoom,
-            onMutate: async (newRoom, context) => {
-                await context.client.cancelQueries({ queryKey: ['rooms'] })
-                
-                const prevRooms = context.client.getQueryData(['rooms'])
-
-                context.client.setQueryData(['rooms'], (old: Room[]) => [...old, newRoom])
-
-                return { prevRooms }
-            },
-            onError: (err, newRoom, onMutateResult, context) => {
-                context.client.setQueryData(['rooms'], onMutateResult?.prevRooms)
-            },
-            onSettled: (data, err, variables, onMutateResult, context) => {
-                context.client.invalidateQueries({ queryKey: ['rooms'] })
-            }
-        })
+    const handleCreateRoomSubmit = () => {
+        setShowCreateRoom(false)
+        addRoomQuery.mutate({ name: roomName, description: roomDescription })
     }
 
     const handleJoinRoom = () => {
         setShowJoinRoom(true)
+    }
+
+    const handleJoinRoomSubmit = () => {
+        setShowJoinRoom(false)
+        joinRoomQuery.mutate(joinCode)
+    }
+
+    const handleQRScan = () => {
+        console.log("Open QR scanner")
     }
 
     if (ownedRoomsQuery.isPending || joinedRoomsQuery.isPending) {
@@ -118,6 +174,8 @@ export default function HomePage() {
         )
     }
 
+    const rooms = activeTab === "owned" ? ownedRoomsQuery.data : joinedRoomsQuery.data
+
     return (
         <div className="max-w-5xl mx-auto p-6">
             <div className="mb-8">
@@ -148,14 +206,15 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-3">
-                {activeTab === "owned" && ownedRoomsQuery.data && ownedRoomsQuery.data.length > 0 ? (
-                    ownedRoomsQuery.data.map((room, i) => (
+                {rooms && rooms.length > 0 ? (
+                    rooms.map((room, i) => (
                         <RoomItem
                             key={i}
                             id={room.id}
                             roomName={room.name}
                             joinCode={room.join_code || "ABC123"}
                             onDelete={handleDeleteRoom}
+                            onLeave={handleLeaveRoom}
                         />
                     ))
                 ): (
@@ -169,6 +228,125 @@ export default function HomePage() {
                     </div>
                 )}
             </div>
+
+            <Dialog open={showCreateRoom} onOpenChange={setShowCreateRoom}>
+                <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Create New Room</DialogTitle>
+                    <DialogDescription>
+                    Add a new learning room for your students to join
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                    <Label htmlFor="room-name">Room Name *</Label>
+                    <Input
+                        id="room-name"
+                        placeholder="e.g., Mathematics 101"
+                        value={roomName}
+                        onChange={(e) => setRoomName(e.target.value)}
+                    />
+                    </div>
+                    <div className="space-y-2">
+                    <Label htmlFor="room-description">Description (optional)</Label>
+                    <Textarea
+                        id="room-description"
+                        placeholder="Add details about this room..."
+                        value={roomDescription}
+                        onChange={(e) => setRoomDescription(e.target.value)}
+                        rows={3}
+                    />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button
+                    variant="outline"
+                    onClick={() => setShowCreateRoom(false)}
+                    >
+                    Cancel
+                    </Button>
+                    <Button
+                    onClick={handleCreateRoomSubmit}
+                    disabled={!roomName.trim()}
+                    >
+                    Create Room
+                    </Button>
+                </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showJoinRoom} onOpenChange={setShowJoinRoom}>
+                <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Join a Room</DialogTitle>
+                    <DialogDescription>
+                    Enter a join code or scan a QR code to join a room
+                    </DialogDescription>
+                </DialogHeader>
+                
+                <Tabs value={joinMethod} onValueChange={(value) => setJoinMethod(value as "code" | "qr")}>
+                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="code">Enter Code</TabsTrigger>
+                    <TabsTrigger value="qr">Scan QR Code</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+
+                <div className="py-4">
+                    {joinMethod === "code" ? (
+                    <div className="space-y-2">
+                        <Label htmlFor="join-code">Join Code</Label>
+                        <Input
+                        id="join-code"
+                        placeholder="e.g., MATH101"
+                        value={joinCode}
+                        onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                        className="text-center text-lg font-mono tracking-wider"
+                        />
+                        <p className="text-sm text-gray-500">
+                        Ask your instructor for the room join code
+                        </p>
+                    </div>
+                    ) : (
+                    <div className="space-y-4">
+                        <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                        <Camera className="h-16 w-16 text-gray-400 mb-4" />
+                        <p className="text-sm text-gray-600 text-center mb-4">
+                            Position the QR code in front of your camera
+                        </p>
+                        <Button onClick={handleQRScan} variant="outline">
+                            <Camera className="h-4 w-4 mr-2" />
+                            Open Camera
+                        </Button>
+                        </div>
+                        <p className="text-xs text-gray-500 text-center">
+                        Your instructor can display a QR code for quick access
+                        </p>
+                    </div>
+                    )}
+                </div>
+
+                <DialogFooter>
+                    <Button
+                    variant="outline"
+                    onClick={() => {
+                        setShowJoinRoom(false)
+                        setJoinCode("")
+                        setJoinMethod("code")
+                    }}
+                    >
+                    Cancel
+                    </Button>
+                    {joinMethod === "code" && (
+                    <Button
+                        onClick={handleJoinRoomSubmit}
+                        disabled={!joinCode.trim()}
+                    >
+                        Join Room
+                    </Button>
+                    )}
+                </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
