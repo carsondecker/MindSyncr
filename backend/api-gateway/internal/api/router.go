@@ -96,7 +96,9 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	wsHandler := ws.NewWSHandler(cfg)
 
 	wsRouter.Handle("GET /{session_id}", utils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembership(http.HandlerFunc(wsHandler.HandleGetWSTicket)),
+		middlewareHandler.CheckSessionMembership(
+			middlewareHandler.CheckSessionActive(http.HandlerFunc(wsHandler.HandleGetWSTicket)),
+		),
 	))
 
 	router.Handle("/ws/", http.StripPrefix("/ws", wsRouter))

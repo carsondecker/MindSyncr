@@ -85,15 +85,27 @@ export function SessionCard({ session, onDelete, onEnd, onJoin, onLeave } : Sess
               </Button>
             )}
             {session.is_member && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onLeave?.(session.id)}
-                className="gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-300"
-              >
-                <LogOut className="h-4 w-4" />
-                Leave
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onOpen(session.id)}
+                  className="gap-2"
+                >
+                  <Play className="h-4 w-4" />
+                  Open
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onLeave?.(session.id)}
+                  className="gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-300"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Leave
+                </Button>
+              </>
+              
             )}
           </>
         )}

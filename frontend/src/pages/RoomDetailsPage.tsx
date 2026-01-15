@@ -26,7 +26,7 @@ export default function RoomDetailsPage() {
     const { user } = useAuth()
 
     const { getRoom } = useRoomsApi()
-    const { getSessions, createSession, deleteSession } = useSessionsApi()
+    const { getSessions, createSession, deleteSession, endSession, joinSession, leaveSession } = useSessionsApi()
 
     const roomQuery = useQuery({ queryKey: ['rooms', room_id], queryFn: () => getRoom(room_id!), enabled: !!room_id })
     const sessionsQuery = useQuery({ queryKey: ['sessions', room_id], queryFn: () => getSessions(room_id!), enabled: !!room_id })
@@ -73,7 +73,53 @@ export default function RoomDetailsPage() {
             context.client.invalidateQueries({ queryKey: ['sessions', room_id] })
         }
     })
+
+    const endSessionQuery = useMutation({
+        mutationKey: ['endSession'],
+        mutationFn: (session_id: string) => endSession(session_id),
+        onMutate: async (session_id, context) => {
+            await context.client.cancelQueries({ queryKey: ['sessions', room_id] })
+
+            const prevSessions = context.client.getQueryData(['sessions', room_id])
+
+            context.client.setQueryData(['sessions', room_id], (old: Session[]) => old.map((s: Session) => s.id === session_id ? {...s, ended_at: Date.now(), is_active: false} : s))
+
+            return { prevSessions }
+        },
+        onError: (err, variables, onMutateResult, context) => {
+            context.client.setQueryData(['sessions', room_id], onMutateResult?.prevSessions)
+        },
+        onSettled: (data, err, variables, onMutateResult, context) => {
+            context.client.invalidateQueries({ queryKey: ['sessions', room_id] })
+        }
+    })
+
+    const joinSessionQuery = useMutation({
+        mutationKey: ['joinSession'],
+        mutationFn: (session_id: string) => joinSession(session_id),
+        //onMutate: ,
+        onError: (err, newRoom, onMutateResult, context) => {
+            console.error(err)
+            //context.client.setQueryData([''], )
+        },
+        onSettled: (data, err, variables, onMutateResult, context) => {
+            context.client.invalidateQueries({ queryKey: ['sessions'] })
+        }
+    })
     
+    const leaveSessionQuery = useMutation({
+        mutationKey: ['leaveSession'],
+        mutationFn: (session_id: string) => leaveSession(session_id),
+        //onMutate: ,
+        onError: (err, newRoom, onMutateResult, context) => {
+            console.error(err)
+            //context.client.setQueryData([''], )
+        },
+        onSettled: (data, err, variables, onMutateResult, context) => {
+            context.client.invalidateQueries({ queryKey: ['sessions'] })
+        }
+    })
+
     const handleCreateSession = () => {
         setShowCreateSession(true)
     }
@@ -88,15 +134,15 @@ export default function RoomDetailsPage() {
     }
 
     const handleEndSession = (session_id: string) => {
-        
+        endSessionQuery.mutate(session_id)
     }
 
     const handleJoinSession = (session_id: string) => {
-
+        joinSessionQuery.mutate(session_id)
     }
 
     const handleLeaveSession = (session_id: string) => {
-
+        leaveSessionQuery.mutate(session_id)
     }
 
     const handleBackToRooms = () => {
