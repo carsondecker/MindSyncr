@@ -15,3 +15,9 @@ export const sessionSchema = z.object({
 })
 
 export type Session = z.infer<typeof sessionSchema>
+
+export const createSessionRequestSchema = z.object({
+    name: z.string(),
+})
+
+export type CreateSessionRequest = z.infer<typeof createSessionRequestSchema>

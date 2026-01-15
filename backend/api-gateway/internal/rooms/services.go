@@ -111,6 +111,7 @@ func (h *RoomsHandler) getRoomService(ctx context.Context, roomId uuid.UUID) (Ro
 
 	res := Room{
 		Id:          row.ID,
+		OwnerId:     row.OwnerID,
 		Name:        row.Name,
 		Description: row.Description,
 		JoinCode:    row.JoinCode,
@@ -138,6 +139,7 @@ func (h *RoomsHandler) updateRoomsService(ctx context.Context, userId, roomId uu
 
 	res := Room{
 		Id:          row.ID,
+		OwnerId:     row.OwnerID,
 		Name:        row.Name,
 		Description: row.Description,
 		JoinCode:    row.JoinCode,
