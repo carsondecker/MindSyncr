@@ -87,7 +87,7 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 		),
 	))
 	sessionsRouter.Handle("GET /{session_id}/comprehension-scores", utils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(http.HandlerFunc(comprehensionScoresHandler.HandleGetComprehensionScores)),
+		middlewareHandler.CheckSessionMembership(http.HandlerFunc(comprehensionScoresHandler.HandleGetComprehensionScores)),
 	))
 
 	router.Handle("/sessions/", http.StripPrefix("/sessions", sessionsRouter))

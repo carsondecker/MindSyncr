@@ -1,26 +1,43 @@
+import ComprehensionBar from "@/components/comprehensionBar";
+import useComprehensionScoresApi from "@/lib/hooks/useComprehensionScoresApi";
 import { useSessionEvents } from "@/lib/hooks/useSessionEvents";
 import useSessionsApi from "@/lib/hooks/useSessionsApi";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 
 export default function SessionsPage() {
     const { session_id } = useParams()
-    const { state, connected, status } = useSessionEvents(session_id ?? "")
+    const { state, connected, status, handleHydrateScores } = useSessionEvents(session_id!)
 
     const { getSession } = useSessionsApi()
+    const { getComprehensionScores } = useComprehensionScoresApi()
 
-    const { isPending, isError, data: session, error } = useQuery({
+    const getSessionsQuery = useQuery({
         queryKey: ['sessions', session_id],
         queryFn: () => getSession(session_id!),
         enabled: !!session_id
     })
+
+    const getScoresQuery = useQuery({
+        queryKey: ['comprehension_scores', session_id],
+        queryFn: () => getComprehensionScores(session_id!),
+        enabled: !!session_id
+    })
+
+    useEffect(() => {
+        if (getScoresQuery.isSuccess && getScoresQuery.data && session_id) {
+            handleHydrateScores(session_id, getScoresQuery.data)
+        }
+    }, [getScoresQuery.isSuccess, getScoresQuery.data]);
+
     
-    if (isPending) {
+    if (getSessionsQuery.isPending || getScoresQuery.isPending) {
         return <div>Loading…</div>
     }
 
-    if (isError) {
-        return <div>Error: {error.message}</div>
+    if (getSessionsQuery.isError || getScoresQuery.isError) {
+        return <div>Error: {getSessionsQuery.error?.message}</div>
     }
 
     if (status == "connecting") {
@@ -34,7 +51,10 @@ export default function SessionsPage() {
     return (
         <>
             <h2>Live Scores</h2>
-            <pre>{JSON.stringify(state.scores.latest, null, 2)}</pre>
+            <ComprehensionBar
+                userScores={state.scores.latest}
+                showCounts={true}
+            />
         </>
     )
 }

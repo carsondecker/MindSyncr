@@ -7,6 +7,7 @@ type EventState = {
 type ScoresState = {
     history: ComprehensionScore[]
     latest: Record<string, ComprehensionScore>
+    seen: Set<string>
 }
 
 export type { EventState }

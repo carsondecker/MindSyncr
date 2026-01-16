@@ -212,8 +212,8 @@ func (h *MiddlewareHandler) CheckSessionMembership(next http.Handler) http.Handl
 		}
 
 		_, err := h.cfg.Queries.CheckSessionMembership(ctx, sqlc.CheckSessionMembershipParams{
-			ID:     sessionId,
-			UserID: claims.UserId,
+			ID:      sessionId,
+			OwnerID: claims.UserId,
 		})
 		if err != nil {
 			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())

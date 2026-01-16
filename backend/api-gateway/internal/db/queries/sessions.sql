@@ -58,11 +58,16 @@ LIMIT 1;
 -- name: CheckSessionMembership :one
 SELECT 1
 FROM sessions s
-LEFT JOIN session_memberships sm
-    ON s.id = sm.session_id
-    AND sm.user_id = $2
 WHERE s.id = $1
-    AND (s.owner_id = $2 OR sm.user_id IS NOT NULL)
+  AND (
+      s.owner_id = $2
+      OR EXISTS (
+          SELECT 1
+          FROM session_memberships sm
+          WHERE sm.session_id = s.id
+            AND sm.user_id = $2
+      )
+  )
 LIMIT 1;
 
 -- name: CheckSessionActive :one
