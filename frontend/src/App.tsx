@@ -4,7 +4,8 @@ import SignUpPage from "./pages/SignUpPage"
 import LoginPage from "./pages/LoginPage"
 import HomePage from "./pages/HomePage"
 import RoomDetailsPage from "./pages/RoomDetailsPage"
-import SessionsPage from "./pages/SessionPage"
+import PresenterDashboardPage from "./pages/PresenterDashboardPage"
+import ViewerDashboardPage from "./pages/ViewerDashboard"
 
 function App() {
   return (
@@ -13,7 +14,8 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<SignUpPage />} />
       <Route path="/rooms/:room_id" element={<RoomDetailsPage />} />
-      <Route path="/sessions/:session_id" element={<SessionsPage />} />
+      <Route path="/sessions/:session_id/presenter" element={<PresenterDashboardPage />} />
+      <Route path="/sessions/:session_id/viewer" element={<ViewerDashboardPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

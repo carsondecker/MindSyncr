@@ -16,8 +16,12 @@ type SessionCardProps = {
 export function SessionCard({ session, onDelete, onEnd, onJoin, onLeave } : SessionCardProps) {
   const navigate = useNavigate();
   
-  const onOpen = (id: string) => {
-    navigate(`/sessions/${id}`)
+  const onOpenOwner = (id: string) => {
+    navigate(`/sessions/${id}/presenter`)
+  }
+
+  const onOpenMember = (id: string) => {
+    navigate(`/sessions/${id}/viewer`)
   }
 
   return (
@@ -44,7 +48,7 @@ export function SessionCard({ session, onDelete, onEnd, onJoin, onLeave } : Sess
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onOpen(session.id)}
+              onClick={() => onOpenOwner(session.id)}
               className="gap-2"
             >
               <Play className="h-4 w-4" />
@@ -89,7 +93,7 @@ export function SessionCard({ session, onDelete, onEnd, onJoin, onLeave } : Sess
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onOpen(session.id)}
+                  onClick={() => onOpenMember(session.id)}
                   className="gap-2"
                 >
                   <Play className="h-4 w-4" />

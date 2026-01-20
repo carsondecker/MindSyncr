@@ -9,3 +9,9 @@ export const comprehensionScoreSchema = z.object({
 })
 
 export type ComprehensionScore = z.infer<typeof comprehensionScoreSchema>
+
+export const createComprehensionScoreRequestSchema = z.object({
+    score: z.number().min(1).max(5),
+})
+
+export type CreateComprehensionScoreRequest = z.infer<typeof createComprehensionScoreRequestSchema>

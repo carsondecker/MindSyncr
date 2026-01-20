@@ -3,24 +3,24 @@ import useComprehensionScoresApi from "@/lib/hooks/useComprehensionScoresApi";
 import { useSessionEvents } from "@/lib/hooks/useSessionEvents";
 import useSessionsApi from "@/lib/hooks/useSessionsApi";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 
-export default function SessionsPage() {
+export default function PresenterDashboardPage() {
     const { session_id } = useParams()
     const { state, connected, status, handleHydrateScores } = useSessionEvents(session_id!)
 
     const { getSession } = useSessionsApi()
     const { getComprehensionScores } = useComprehensionScoresApi()
 
-    const getSessionsQuery = useQuery({
+    const getSessionQuery = useQuery({
         queryKey: ['sessions', session_id],
         queryFn: () => getSession(session_id!),
         enabled: !!session_id
     })
 
     const getScoresQuery = useQuery({
-        queryKey: ['comprehension_scores', session_id],
+        queryKey: ['comprehensionScores', session_id],
         queryFn: () => getComprehensionScores(session_id!),
         enabled: !!session_id
     })
@@ -32,12 +32,12 @@ export default function SessionsPage() {
     }, [getScoresQuery.isSuccess, getScoresQuery.data]);
 
     
-    if (getSessionsQuery.isPending || getScoresQuery.isPending) {
+    if (getSessionQuery.isPending || getScoresQuery.isPending) {
         return <div>Loading…</div>
     }
 
-    if (getSessionsQuery.isError || getScoresQuery.isError) {
-        return <div>Error: {getSessionsQuery.error?.message}</div>
+    if (getSessionQuery.isError || getScoresQuery.isError) {
+        return <div>Error: {getSessionQuery.error?.message}</div>
     }
 
     if (status == "connecting") {
