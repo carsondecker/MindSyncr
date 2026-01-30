@@ -5,6 +5,8 @@ import { createRoomApi, deleteRoomApi, getJoinedRoomsApi, getOwnedRoomsApi, getR
 import type { CreateRoomRequest } from "../api/models/rooms"
 import { createSessionApi, deleteSessionApi, endSessionApi, getSessionByIdApi, getSessionsApi, joinSessionApi, leaveSessionApi } from "../api/sessions"
 import type { CreateSessionRequest } from "../api/models/sessions"
+import { createComprehensionScoreApi, getComprehensionScoresApi } from "../api/comprehensionScores"
+import type { CreateComprehensionScoreRequest } from "../api/models/comprehensionScores"
 
 export function useApi() {
   const { refreshUser, logoutUser } = useAuth()
@@ -30,6 +32,9 @@ export function useApi() {
   const joinSession = useCallback((session_id: string) => joinSessionApi(apiFetch, session_id), [apiFetch])
   const leaveSession = useCallback((session_id: string) => leaveSessionApi(apiFetch, session_id), [apiFetch])
 
+  const getComprehensionScores = useCallback((session_id: string) => getComprehensionScoresApi(apiFetch, session_id), [apiFetch])
+  const createComprehensionScore = useCallback((session_id: string, input: CreateComprehensionScoreRequest) => createComprehensionScoreApi(apiFetch, session_id, input), [apiFetch])
+
   return {
     apiFetch,
     getOwnedRooms,
@@ -45,6 +50,8 @@ export function useApi() {
     deleteSession,
     endSession,
     joinSession,
-    leaveSession
+    leaveSession,
+    getComprehensionScores,
+    createComprehensionScore
   }
 }

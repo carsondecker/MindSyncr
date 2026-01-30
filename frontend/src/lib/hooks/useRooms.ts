@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import useCoreData from "./useCoreData";
 
-export default function useRooms(autoload: boolean) {
+export default function useRooms(autoload = true) {
     const [load, setLoad] = useState(autoload)
 
     const {
@@ -21,7 +21,7 @@ export default function useRooms(autoload: boolean) {
         if (load && !ownedRooms.isFetched && !joinedRooms.isFetched) {
             loadRoomsInternal()
         }
-    }, [autoload, ownedRooms.isFetched, joinedRooms.isFetched, loadRoomsInternal])
+    }, [load, ownedRooms.isFetched, joinedRooms.isFetched, loadRoomsInternal])
 
     return {
         loadRooms,

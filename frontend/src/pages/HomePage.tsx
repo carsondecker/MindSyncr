@@ -1,10 +1,7 @@
 import { RoomCard } from "@/components/room-card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { type CreateRoomRequest, type Room } from "@/lib/api/models/rooms"
 import { useAuth } from "@/lib/context/AuthContext"
-import useRoomsApi from "@/lib/hooks/useRooms"
-import { useMutation, useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { Plus, UserPlus, Camera } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -17,7 +14,7 @@ import useRoomMutations from "@/lib/hooks/useRoomMutations"
 // TODO: split into smaller components
 export default function HomePage() {
     const { user } = useAuth()
-    const { ownedRooms, joinedRooms } = useRooms(true)
+    const { ownedRooms, joinedRooms } = useRooms()
     const { createRoom, deleteRoom, joinRoom, leaveRoom } = useRoomMutations()
 
     // const { getJoinedRooms, getOwnedRooms, createRoom, deleteRoom, joinRoom, leaveRoom } = useRoomsApi()

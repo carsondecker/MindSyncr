@@ -8,12 +8,14 @@ export default function useCoreData() {
         getJoinedRooms,
         getRoomById,
         getSessions,
-        getSessionById
+        getSessionById,
+        getComprehensionScores
     } = useApi()
     const [enableFetchRooms, setEnableFetchRooms] = useState(false)
     const [roomIdForRoom, setRoomIdForRoom] = useState<string | null>(null)
     const [roomIdForSessions, setRoomIdForSessions] = useState<string | null>(null)
     const [sessionId, setSessionId] = useState<string | null>(null)
+    const [sessionIdForScores, setSessionIdForScores] = useState<string | null>(null)
 
     // --- rooms ---
 
@@ -65,6 +67,16 @@ export default function useCoreData() {
     const fetchSessionById = (id: string) => {
         setSessionId(id)
     }
+
+    const scores = useQuery({
+        queryKey: ['comprehensionScores', sessionIdForScores],
+        queryFn: () => getComprehensionScores(sessionIdForScores!),
+        enabled: !!sessionIdForScores
+    })
+
+    const fetchScores = (id: string) => {
+        setSessionIdForScores(id)
+    }
     
     return {
         loadRooms,
@@ -75,6 +87,8 @@ export default function useCoreData() {
         sessions,
         session,
         fetchSessions,
-        fetchSessionById
+        fetchSessionById,
+        scores,
+        fetchScores
     }
 }

@@ -4,12 +4,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import type { CreateSessionRequest, Session } from "@/lib/api/models/sessions"
 import { useAuth } from "@/lib/context/AuthContext"
 import useRooms from "@/lib/hooks/useRooms"
 import useSessionMutations from "@/lib/hooks/useSessionMutations"
 import useSessions from "@/lib/hooks/useSessions"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
@@ -18,11 +16,10 @@ import { useNavigate, useParams } from "react-router-dom"
 export default function RoomDetailsPage() {
     const { room_id } = useParams()
     
-    const { fetchRoomById, room } = useRooms(false)
-    const { fetchSessions, sessions } = useSessions()
+    const { fetchRoomById, room } = useRooms()
+    const { sessions } = useSessions(room_id!)
     const { createSession, deleteSession, endSession, joinSession, leaveSession } = useSessionMutations(room_id!)
 
-    const queryClient = useQueryClient()
     const navigate = useNavigate()
     const [showCreateSession, setShowCreateSession] = useState(false)
     const [sessionName, setSessionName] = useState("")
@@ -32,7 +29,6 @@ export default function RoomDetailsPage() {
 
     useEffect(() => {
         fetchRoomById(room_id!)
-        fetchSessions(room_id!)
     }, [])
 
     const handleCreateSession = () => {

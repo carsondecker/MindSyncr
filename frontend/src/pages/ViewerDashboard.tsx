@@ -1,9 +1,7 @@
 import ComprehensionInput from "@/components/comprehensionInput";
-import type { CreateComprehensionScoreRequest } from "@/lib/api/models/comprehensionScores";
-import useComprehensionScoresApi from "@/lib/hooks/useComprehensionScoresApi";
+import useComprehensionScoreMutations from "@/lib/hooks/useComprehensionScoreMutations";
 import { useSessionEvents } from "@/lib/hooks/useSessionEvents";
 import useSessions from "@/lib/hooks/useSessions";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 
@@ -12,19 +10,14 @@ export default function ViewerDashboardPage() {
     const { connected, status } = useSessionEvents(session_id!)
 
     const { fetchSessionById, session } = useSessions()
-    const { createComprehensionScore } = useComprehensionScoresApi()
+    const { createScore } = useComprehensionScoreMutations(session_id!)
 
     useEffect(() => {
         fetchSessionById(session_id!)
     }, [])
 
-    const createScoreQuery = useMutation({
-        mutationKey: ['createComprehensionScores'],
-        mutationFn: (input: CreateComprehensionScoreRequest) => createComprehensionScore(session_id!, input)
-    })
-
     const handleScoreSubmit = (score: number) => {
-        createScoreQuery.mutate({ score })
+        createScore.mutate({ score })
     }
     
     if (session.isPending) {

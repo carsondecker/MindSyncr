@@ -96,6 +96,7 @@ export default function useSessionMutations(room_id?: string) {
     })
 
     return {
+        setSessionRoomId,
         createSession: createSessionMutation,
         deleteSession: deleteSessionMutation,
         endSession: endSessionMutation,
