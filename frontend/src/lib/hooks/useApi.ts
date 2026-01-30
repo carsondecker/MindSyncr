@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/context/AuthContext"
 import { createApiClient } from "../api/client"
 import { createRoomApi, deleteRoomApi, getJoinedRoomsApi, getOwnedRoomsApi, getRoomByIdApi, joinRoomApi, leaveRoomApi } from "../api/rooms"
 import type { CreateRoomRequest } from "../api/models/rooms"
-import { createSessionApi, deleteSessionApi, endSessionApi, getSessionApi, getSessionByIdApi, getSessionsApi, joinSessionApi, leaveSessionApi } from "../api/sessions"
+import { createSessionApi, deleteSessionApi, endSessionApi, getSessionByIdApi, getSessionsApi, joinSessionApi, leaveSessionApi } from "../api/sessions"
 import type { CreateSessionRequest } from "../api/models/sessions"
 
 export function useApi() {

@@ -14,7 +14,7 @@ export async function getSessionsApi(apiFetch: ApiFetch, room_id: string): Promi
     return response
 }
 
-export async function getSessionApi(apiFetch: ApiFetch, session_id: string): Promise<Session> {
+export async function getSessionByIdApi(apiFetch: ApiFetch, session_id: string): Promise<Session> {
     const data = await apiFetch<Session>(`/sessions/${session_id}`, {
         method: "GET",
     })

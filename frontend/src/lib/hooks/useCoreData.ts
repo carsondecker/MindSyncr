@@ -11,7 +11,6 @@ export default function useCoreData() {
         getSessionById
     } = useApi()
     const [enableFetchRooms, setEnableFetchRooms] = useState(false)
-    const [enableFetchSessions, setEnableFetchSessions] = useState(false)
     const [roomIdForRoom, setRoomIdForRoom] = useState<string | null>(null)
     const [roomIdForSessions, setRoomIdForSessions] = useState<string | null>(null)
     const [sessionId, setSessionId] = useState<string | null>(null)
@@ -47,14 +46,11 @@ export default function useCoreData() {
 
     // --- sessions ---
 
-    const loadSessions = () => {
-        setEnableFetchSessions(true)
-    }
-
     const sessions = useQuery({
         queryKey: ['sessions', roomIdForSessions],
         queryFn: () => getSessions(roomIdForSessions!),
-        enabled: !!roomIdForSessions })
+        enabled: !!roomIdForSessions
+    })
 
     const fetchSessions = (id: string) => {
         setRoomIdForSessions(id)
@@ -67,7 +63,7 @@ export default function useCoreData() {
     })
 
     const fetchSessionById = (id: string) => {
-        setRoomIdForSessions(id)
+        setSessionId(id)
     }
     
     return {

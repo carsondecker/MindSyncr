@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import type { CreateSessionRequest, Session } from "@/lib/api/models/sessions"
 import { useAuth } from "@/lib/context/AuthContext"
 import useRooms from "@/lib/hooks/useRooms"
+import useSessionMutations from "@/lib/hooks/useSessionMutations"
 import useSessions from "@/lib/hooks/useSessions"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, Plus } from "lucide-react"
@@ -15,11 +16,13 @@ import { useNavigate, useParams } from "react-router-dom"
 
 
 export default function RoomDetailsPage() {
+    const { room_id } = useParams()
+    
     const { fetchRoomById, room } = useRooms(false)
     const { fetchSessions, sessions } = useSessions()
+    const { createSession, deleteSession, endSession, joinSession, leaveSession } = useSessionMutations(room_id!)
 
     const queryClient = useQueryClient()
-    const { room_id } = useParams()
     const navigate = useNavigate()
     const [showCreateSession, setShowCreateSession] = useState(false)
     const [sessionName, setSessionName] = useState("")
@@ -32,55 +35,29 @@ export default function RoomDetailsPage() {
         fetchSessions(room_id!)
     }, [])
 
-    const joinSessionQuery = useMutation({
-        mutationKey: ['joinSession'],
-        mutationFn: (session_id: string) => joinSession(session_id),
-        //onMutate: ,
-        onError: (err, newRoom, onMutateResult, context) => {
-            console.error(err)
-            //context.client.setQueryData([''], )
-        },
-        onSettled: (data, err, variables, onMutateResult, context) => {
-            context.client.invalidateQueries({ queryKey: ['sessions'] })
-        }
-    })
-    
-    const leaveSessionQuery = useMutation({
-        mutationKey: ['leaveSession'],
-        mutationFn: (session_id: string) => leaveSession(session_id),
-        //onMutate: ,
-        onError: (err, newRoom, onMutateResult, context) => {
-            console.error(err)
-            //context.client.setQueryData([''], )
-        },
-        onSettled: (data, err, variables, onMutateResult, context) => {
-            context.client.invalidateQueries({ queryKey: ['sessions'] })
-        }
-    })
-
     const handleCreateSession = () => {
         setShowCreateSession(true)
     }
 
     const handleCreateSessionSubmit = () => {
         setShowCreateSession(false)
-        createSessionQuery.mutate({ name: sessionName })
+        createSession.mutate({ name: sessionName })
     }
 
     const handleDeleteSession = (session_id: string) => {
-        deleteSessionQuery.mutate(session_id)
+        deleteSession.mutate(session_id)
     }
 
     const handleEndSession = (session_id: string) => {
-        endSessionQuery.mutate(session_id)
+        endSession.mutate(session_id)
     }
 
     const handleJoinSession = (session_id: string) => {
-        joinSessionQuery.mutate(session_id)
+        joinSession.mutate(session_id)
     }
 
     const handleLeaveSession = (session_id: string) => {
-        leaveSessionQuery.mutate(session_id)
+        leaveSession.mutate(session_id)
     }
 
     const handleBackToRooms = () => {

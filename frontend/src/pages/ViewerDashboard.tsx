@@ -1,25 +1,22 @@
-import ComprehensionBar from "@/components/comprehensionBar";
 import ComprehensionInput from "@/components/comprehensionInput";
 import type { CreateComprehensionScoreRequest } from "@/lib/api/models/comprehensionScores";
 import useComprehensionScoresApi from "@/lib/hooks/useComprehensionScoresApi";
 import { useSessionEvents } from "@/lib/hooks/useSessionEvents";
-import useSessionsApi from "@/lib/hooks/useSessionsApi";
+import useSessions from "@/lib/hooks/useSessions";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 
 export default function ViewerDashboardPage() {
     const { session_id } = useParams()
-    const { state, connected, status, handleHydrateScores } = useSessionEvents(session_id!)
+    const { connected, status } = useSessionEvents(session_id!)
 
-    const { getSession } = useSessionsApi()
+    const { fetchSessionById, session } = useSessions()
     const { createComprehensionScore } = useComprehensionScoresApi()
 
-    const getSessionQuery = useQuery({
-        queryKey: ['sessions', session_id],
-        queryFn: () => getSession(session_id!),
-        enabled: !!session_id
-    })
+    useEffect(() => {
+        fetchSessionById(session_id!)
+    }, [])
 
     const createScoreQuery = useMutation({
         mutationKey: ['createComprehensionScores'],
@@ -30,12 +27,12 @@ export default function ViewerDashboardPage() {
         createScoreQuery.mutate({ score })
     }
     
-    if (getSessionQuery.isPending) {
+    if (session.isPending) {
         return <div>Loading…</div>
     }
 
-    if (getSessionQuery.isError) {
-        return <div>Error: {getSessionQuery.error?.message}</div>
+    if (session.isError) {
+        return <div>Error: {session.error?.message}</div>
     }
 
     if (status == "connecting") {
