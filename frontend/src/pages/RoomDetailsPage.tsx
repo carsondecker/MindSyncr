@@ -6,17 +6,19 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { CreateSessionRequest, Session } from "@/lib/api/models/sessions"
 import { useAuth } from "@/lib/context/AuthContext"
-import useRoomsApi from "@/lib/hooks/useRoomsApi"
-import useSessionsApi from "@/lib/hooks/useSessionsApi"
+import useRooms from "@/lib/hooks/useRooms"
+import useSessions from "@/lib/hooks/useSessions"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, Plus } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
 
 export default function RoomDetailsPage() {
-    const queryClient = useQueryClient()
+    const { fetchRoomById, room } = useRooms(false)
+    const { fetchSessions, sessions } = useSessions()
 
+    const queryClient = useQueryClient()
     const { room_id } = useParams()
     const navigate = useNavigate()
     const [showCreateSession, setShowCreateSession] = useState(false)
@@ -25,74 +27,10 @@ export default function RoomDetailsPage() {
 
     const { user } = useAuth()
 
-    const { getRoom } = useRoomsApi()
-    const { getSessions, createSession, deleteSession, endSession, joinSession, leaveSession } = useSessionsApi()
-
-    const roomQuery = useQuery({ queryKey: ['rooms', room_id], queryFn: () => getRoom(room_id!), enabled: !!room_id })
-    const sessionsQuery = useQuery({ queryKey: ['sessions', room_id], queryFn: () => getSessions(room_id!), enabled: !!room_id })
-    
-    const createSessionQuery = useMutation({
-            mutationKey: ['createSession'],
-            mutationFn: (data: CreateSessionRequest) => createSession(room_id!, data),
-            /*
-            onMutate: async (newRoom, context) => {
-                    await context.client.cancelQueries({ queryKey: ['rooms'] })
-    
-                const prevRooms = context.client.getQueryData(['rooms'])
-    
-                context.client.setQueryData(['rooms'], (old: Room[]) => [...old, newRoom])
-    
-            return { prevRooms }
-            },
-            */
-            onError: (err, variables, onMutateResult, context) => {
-                console.error(err)
-                //context.client.setQueryData(['rooms'], onMutateResult?.prevRooms)
-            },
-            onSettled: (data, err, variables, onMutateResult, context) => {
-                context.client.invalidateQueries({ queryKey: ['sessions', room_id] })
-            }
-        })
-
-    const deleteSessionQuery = useMutation({
-        mutationKey: ['deleteRoom'],
-        mutationFn: (session_id: string) => deleteSession(session_id),
-        onMutate: async (session_id, context) => {
-            await context.client.cancelQueries({ queryKey: ['sessions', room_id] })
-
-            const prevRooms = context.client.getQueryData(['sessions', room_id])
-
-            context.client.setQueryData(['sessions', room_id], (old: Session[]) => old.filter((s: Session) => s.id !== session_id))
-
-            return { prevRooms }
-        },
-        onError: (err, variables, onMutateResult, context) => {
-            context.client.setQueryData(['sessions', room_id], onMutateResult?.prevRooms)
-        },
-        onSettled: (data, err, variables, onMutateResult, context) => {
-            context.client.invalidateQueries({ queryKey: ['sessions', room_id] })
-        }
-    })
-
-    const endSessionQuery = useMutation({
-        mutationKey: ['endSession'],
-        mutationFn: (session_id: string) => endSession(session_id),
-        onMutate: async (session_id, context) => {
-            await context.client.cancelQueries({ queryKey: ['sessions', room_id] })
-
-            const prevSessions = context.client.getQueryData(['sessions', room_id])
-
-            context.client.setQueryData(['sessions', room_id], (old: Session[]) => old.map((s: Session) => s.id === session_id ? {...s, ended_at: Date.now(), is_active: false} : s))
-
-            return { prevSessions }
-        },
-        onError: (err, variables, onMutateResult, context) => {
-            context.client.setQueryData(['sessions', room_id], onMutateResult?.prevSessions)
-        },
-        onSettled: (data, err, variables, onMutateResult, context) => {
-            context.client.invalidateQueries({ queryKey: ['sessions', room_id] })
-        }
-    })
+    useEffect(() => {
+        fetchRoomById(room_id!)
+        fetchSessions(room_id!)
+    }, [])
 
     const joinSessionQuery = useMutation({
         mutationKey: ['joinSession'],
@@ -149,20 +87,20 @@ export default function RoomDetailsPage() {
         navigate("/")
     }
 
-    if (roomQuery.isPending || sessionsQuery.isPending) {
+    if (room.isPending || sessions.isPending) {
         return <div>Loading…</div>
     }
 
-    if (roomQuery.isError) {
-        return <div>Error: {roomQuery.error.message}</div>
+    if (room.isError) {
+        return <div>Error: {room.error.message}</div>
     }
     
-    if (sessionsQuery.isError) {
-        return <div>Error: {sessionsQuery.error.message}</div>
+    if (sessions.isError) {
+        return <div>Error: {sessions.error.message}</div>
     }
 
-    const isOwner = roomQuery.data.owner_id === user?.id
-    const hasActiveSession = sessionsQuery.data.some(s => s.is_active)
+    const isOwner = room.data.owner_id === user?.id
+    const hasActiveSession = sessions.data.some(s => s.is_active)
 
     return (
         <div className="max-w-5xl mx-auto p-6">
@@ -178,13 +116,13 @@ export default function RoomDetailsPage() {
             <div className="mb-8">
                 <div className="flex items-start justify-between mb-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{roomQuery.data.name}</h1>
-                    {roomQuery.data.description && (
-                    <p className="text-gray-600 mb-2">{roomQuery.data.description}</p>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{room.data.name}</h1>
+                    {room.data.description && (
+                    <p className="text-gray-600 mb-2">{room.data.description}</p>
                     )}
                     <div className="flex gap-4 text-sm text-gray-500">
-                    <span>Room ID: {roomQuery.data.id}</span>
-                    <span>Join Code: <span className="font-mono font-semibold text-blue-600">{roomQuery.data.join_code}</span></span>
+                    <span>Room ID: {room.data.id}</span>
+                    <span>Join Code: <span className="font-mono font-semibold text-blue-600">{room.data.join_code}</span></span>
                     </div>
                 </div>
                 </div>
@@ -213,8 +151,8 @@ export default function RoomDetailsPage() {
             )}
 
             <div className="space-y-3">
-                {sessionsQuery.data && sessionsQuery.data.length > 0 ? (
-                sessionsQuery.data.map((session) => (
+                {sessions.data && sessions.data.length > 0 ? (
+                sessions.data.map((session) => (
                     <SessionCard
                     key={session.id}
                     session={session}

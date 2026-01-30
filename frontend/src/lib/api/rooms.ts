@@ -26,7 +26,7 @@ export async function getJoinedRoomsApi(apiFetch: ApiFetch): Promise<Room[]> {
     return response
 }
 
-export async function getRoomApi(apiFetch: ApiFetch, room_id: string): Promise<Room> {
+export async function getRoomByIdApi(apiFetch: ApiFetch, room_id: string): Promise<Room> {
   const data = await apiFetch<Room>(`/rooms/${room_id}`, {
     method: "GET",
   })

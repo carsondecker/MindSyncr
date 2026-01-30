@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { type CreateRoomRequest, type Room } from "@/lib/api/models/rooms"
 import { useAuth } from "@/lib/context/AuthContext"
-import useRoomsApi from "@/lib/hooks/useRoomsApi"
+import useRoomsApi from "@/lib/hooks/useRooms"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { Plus, UserPlus, Camera } from "lucide-react"
@@ -11,10 +11,16 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import useRooms from "@/lib/hooks/useRooms"
+import useRoomMutations from "@/lib/hooks/useRoomMutations"
 
+// TODO: split into smaller components
 export default function HomePage() {
     const { user } = useAuth()
-    const { getJoinedRooms, getOwnedRooms, createRoom, deleteRoom, joinRoom, leaveRoom } = useRoomsApi()
+    const { ownedRooms, joinedRooms } = useRooms(true)
+    const { createRoom, deleteRoom, joinRoom, leaveRoom } = useRoomMutations()
+
+    // const { getJoinedRooms, getOwnedRooms, createRoom, deleteRoom, joinRoom, leaveRoom } = useRoomsApi()
     const [activeTab, setActiveTab] = useState<"owned" | "joined">("owned")
     const [showCreateRoom, setShowCreateRoom] = useState(false)
     const [showJoinRoom, setShowJoinRoom] = useState(false)
@@ -23,99 +29,12 @@ export default function HomePage() {
     const [roomName, setRoomName] = useState("")
     const [roomDescription, setRoomDescription] = useState("")
 
-
-    const ownedRoomsQuery = useQuery({
-        queryKey: ['rooms', 'owned'],
-        queryFn: getOwnedRooms
-    })
-
-    const joinedRoomsQuery = useQuery({
-        queryKey: ['rooms', 'joined'],
-        queryFn: getJoinedRooms
-    })
-
-    const addRoomQuery = useMutation({
-        mutationKey: ['addRoom'],
-        mutationFn: (data: CreateRoomRequest) => createRoom(data),
-        /*
-        onMutate: async (newRoom, context) => {
-                await context.client.cancelQueries({ queryKey: ['rooms'] })
-
-            const prevRooms = context.client.getQueryData(['rooms'])
-
-            context.client.setQueryData(['rooms'], (old: Room[]) => [...old, newRoom])
-
-        return { prevRooms }
-        },
-        */
-        onError: (err, variables, onMutateResult, context) => {
-            console.error(err)
-            //context.client.setQueryData(['rooms'], onMutateResult?.prevRooms)
-        },
-        onSettled: (data, err, variables, onMutateResult, context) => {
-            context.client.invalidateQueries({ queryKey: ['rooms'] })
-        }
-    })
-
-    const deleteRoomQuery = useMutation({
-        mutationKey: ['deleteRoom'],
-        mutationFn: (room_id: string) => deleteRoom(room_id),
-        onMutate: async (room_id, context) => {
-            await context.client.cancelQueries({ queryKey: ['rooms', 'owned'] })
-
-            const prevRooms = context.client.getQueryData(['rooms', 'owned'])
-
-            context.client.setQueryData(['rooms', 'owned'], (old: Room[]) => old.filter((r: Room) => r.id !== room_id))
-
-            return { prevRooms }
-        },
-        onError: (err, variables, onMutateResult, context) => {
-            context.client.setQueryData(['rooms', 'owned'], onMutateResult?.prevRooms)
-        },
-        onSettled: (data, err, variables, onMutateResult, context) => {
-            context.client.invalidateQueries({ queryKey: ['rooms', 'owned'] })
-        }
-    })
-
-    const joinRoomQuery = useMutation({
-        mutationKey: ['joinRoom'],
-        mutationFn: (join_code: string) => joinRoom(join_code),
-        //onMutate: ,
-        onError: (err, newRoom, onMutateResult, context) => {
-            console.error(err)
-            //context.client.setQueryData([''], )
-        },
-        onSettled: (data, err, variables, onMutateResult, context) => {
-            context.client.invalidateQueries({ queryKey: ['rooms', 'joined'] })
-        }
-    })
-
-    const leaveRoomQuery = useMutation({
-        mutationKey: ['leaveRoom'],
-        mutationFn: (room_id: string) => leaveRoom(room_id),
-        onMutate: async (room_id, context) => {
-            await context.client.cancelQueries({ queryKey: ['rooms', 'owned'] })
-
-            const prevRooms = context.client.getQueryData(['rooms', 'owned'])
-
-            context.client.setQueryData(['rooms', 'joined'], (old: Room[]) => old.filter((r: Room) => r.id !== room_id))
-
-            return { prevRooms }
-        },
-        onError: (err, variables, onMutateResult, context) => {
-            context.client.setQueryData(['rooms', 'joined'], onMutateResult?.prevRooms)
-        },
-        onSettled: (data, err, variables, onMutateResult, context) => {
-            context.client.invalidateQueries({ queryKey: ['rooms', 'joined'] })
-        }
-    })
-
     const handleDeleteRoom = (room_id: string) => {
-        deleteRoomQuery.mutate(room_id)
+        deleteRoom.mutate(room_id)
     }
 
     const handleLeaveRoom = (room_id: string) => {
-        leaveRoomQuery.mutate(room_id)
+        leaveRoom.mutate(room_id)
     }
 
     const handleCreateRoom = () => {
@@ -126,7 +45,7 @@ export default function HomePage() {
 
     const handleCreateRoomSubmit = () => {
         setShowCreateRoom(false)
-        addRoomQuery.mutate({ name: roomName, description: roomDescription })
+        createRoom.mutate({ name: roomName, description: roomDescription })
     }
 
     const handleJoinRoom = () => {
@@ -135,14 +54,14 @@ export default function HomePage() {
 
     const handleJoinRoomSubmit = () => {
         setShowJoinRoom(false)
-        joinRoomQuery.mutate(joinCode)
+        joinRoom.mutate(joinCode)
     }
 
     const handleQRScan = () => {
         console.log("Open QR scanner")
     }
 
-    if (ownedRoomsQuery.isPending || joinedRoomsQuery.isPending) {
+    if (ownedRooms.isPending || joinedRooms.isPending) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
@@ -153,19 +72,19 @@ export default function HomePage() {
         )
     }
 
-    if (ownedRoomsQuery.isError || joinedRoomsQuery.isError) {
+    if (ownedRooms.isError || joinedRooms.isError) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center bg-red-50 border border-red-200 rounded-lg p-8 max-w-md">
                     <h2 className="text-xl font-semibold text-red-700 mb-2">Error Loading Rooms</h2>
                     <p className="text-red-600">
                         {(() => {
-                            if (ownedRoomsQuery.isError && joinedRoomsQuery.isError) {
-                                return ownedRoomsQuery.error.message + " and " + joinedRoomsQuery.error.message
-                            } else if (ownedRoomsQuery.isError) {
-                                return ownedRoomsQuery.error.message
+                            if (ownedRooms.isError && joinedRooms.isError) {
+                                return ownedRooms.error.message + " and " + joinedRooms.error.message
+                            } else if (ownedRooms.isError) {
+                                return ownedRooms.error.message
                             } else {
-                                return joinedRoomsQuery.error?.message
+                                return joinedRooms.error?.message
                             }
                         })()}
                     </p>
@@ -174,7 +93,7 @@ export default function HomePage() {
         )
     }
 
-    const rooms = activeTab === "owned" ? ownedRoomsQuery.data : joinedRoomsQuery.data
+    const rooms = activeTab === "owned" ? ownedRooms.data : joinedRooms.data
 
     return (
         <div className="max-w-5xl mx-auto p-6">
