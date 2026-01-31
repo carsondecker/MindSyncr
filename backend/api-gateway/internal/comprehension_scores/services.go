@@ -49,9 +49,9 @@ func (h *ComprehensionScoresHandler) getComprehensionScoresService(ctx context.C
 		}
 	}
 
-	rooms := make([]ComprehensionScore, 0)
+	scores := make([]ComprehensionScore, 0)
 	for _, row := range rows {
-		rooms = append(rooms, ComprehensionScore{
+		scores = append(scores, ComprehensionScore{
 			Id:        row.ID,
 			SessionId: row.SessionID,
 			UserId:    row.UserID,
@@ -60,5 +60,5 @@ func (h *ComprehensionScoresHandler) getComprehensionScoresService(ctx context.C
 		})
 	}
 
-	return rooms, nil
+	return scores, nil
 }

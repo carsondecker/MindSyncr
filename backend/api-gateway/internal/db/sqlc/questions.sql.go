@@ -11,6 +11,44 @@ import (
 	"github.com/google/uuid"
 )
 
+const getQuestionsBySession = `-- name: GetQuestionsBySession :many
+SELECT id, user_id, session_id, text, is_answered, answered_at, created_at, updated_at
+FROM questions
+WHERE session_id = $1
+`
+
+func (q *Queries) GetQuestionsBySession(ctx context.Context, sessionID uuid.UUID) ([]Question, error) {
+	rows, err := q.db.QueryContext(ctx, getQuestionsBySession, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Question
+	for rows.Next() {
+		var i Question
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.SessionID,
+			&i.Text,
+			&i.IsAnswered,
+			&i.AnsweredAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertQuestion = `-- name: InsertQuestion :one
 INSERT INTO questions (user_id, session_id, text)
 VALUES (

@@ -52,9 +52,9 @@ func (h *SessionsHandler) getSessionsService(ctx context.Context, userId, roomId
 		}
 	}
 
-	rooms := make([]Session, 0)
+	sessions := make([]Session, 0)
 	for _, row := range rows {
-		rooms = append(rooms, Session{
+		sessions = append(sessions, Session{
 			Id:        row.ID,
 			RoomId:    row.RoomID,
 			OwnerID:   row.OwnerID,
@@ -69,7 +69,7 @@ func (h *SessionsHandler) getSessionsService(ctx context.Context, userId, roomId
 		})
 	}
 
-	return rooms, nil
+	return sessions, nil
 }
 
 func (h *SessionsHandler) getSessionService(ctx context.Context, userId, sessionId uuid.UUID) (Session, *utils.ServiceError) {

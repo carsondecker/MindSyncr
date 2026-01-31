@@ -5,6 +5,7 @@ import (
 
 	"github.com/carsondecker/MindSyncr/internal/auth"
 	comprehensionscores "github.com/carsondecker/MindSyncr/internal/comprehension_scores"
+	"github.com/carsondecker/MindSyncr/internal/questions"
 	"github.com/carsondecker/MindSyncr/internal/rooms"
 	"github.com/carsondecker/MindSyncr/internal/sessions"
 	"github.com/carsondecker/MindSyncr/internal/utils"
@@ -88,6 +89,17 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	))
 	sessionsRouter.Handle("GET /{session_id}/comprehension-scores", utils.AuthMiddleware(
 		middlewareHandler.CheckSessionMembership(http.HandlerFunc(comprehensionScoresHandler.HandleGetComprehensionScores)),
+	))
+
+	questionsHandler := questions.NewQuestionsHandler(cfg)
+
+	sessionsRouter.Handle("POST /{session_id}/questions", utils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembershipOnly(
+			middlewareHandler.CheckSessionActive(http.HandlerFunc(questionsHandler.HandleCreateQuestion)),
+		),
+	))
+	sessionsRouter.Handle("GET /{session_id}/questions", utils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembership(http.HandlerFunc(questionsHandler.HandleGetQuestions)),
 	))
 
 	router.Handle("/sessions/", http.StripPrefix("/sessions", sessionsRouter))
