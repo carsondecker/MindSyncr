@@ -1,13 +1,13 @@
 -- +goose Up
 CREATE TABLE questions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id),
-    session_id UUID REFERENCES sessions(id),
+    user_id UUID NOT NULL REFERENCES users(id),
+    session_id UUID NOT NULL REFERENCES sessions(id),
     text TEXT NOT NULL,
-    is_answered BOOLEAN DEFAULT FALSE,
+    is_answered BOOLEAN NOT NULL DEFAULT FALSE,
     answered_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- +goose Down

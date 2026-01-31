@@ -19,6 +19,17 @@ type ComprehensionScore struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type Question struct {
+	ID         uuid.UUID    `json:"id"`
+	UserID     uuid.UUID    `json:"user_id"`
+	SessionID  uuid.UUID    `json:"session_id"`
+	Text       string       `json:"text"`
+	IsAnswered bool         `json:"is_answered"`
+	AnsweredAt sql.NullTime `json:"answered_at"`
+	CreatedAt  time.Time    `json:"created_at"`
+	UpdatedAt  time.Time    `json:"updated_at"`
+}
+
 type RefreshToken struct {
 	ID        uuid.UUID `json:"id"`
 	UserID    uuid.UUID `json:"user_id"`
