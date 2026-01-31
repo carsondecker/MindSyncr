@@ -33,3 +33,22 @@ func (h *QuestionsHandler) HandleCreateQuestion(w http.ResponseWriter, r *http.R
 		},
 	)
 }
+
+func (h *QuestionsHandler) HandleGetQuestions(w http.ResponseWriter, r *http.Request) {
+	utils.BaseHandlerFunc(h, w, r,
+		http.StatusOK,
+		func() ([]Question, *utils.ServiceError) {
+			session_id, sErr := utils.GetUUIDPathValue(r, "session_id")
+			if sErr != nil {
+				return nil, sErr
+			}
+
+			res, sErr := h.getQuestionsService(r.Context(), session_id)
+			if sErr != nil {
+				return nil, sErr
+			}
+
+			return res, nil
+		},
+	)
+}
