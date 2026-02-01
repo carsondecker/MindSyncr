@@ -9,13 +9,15 @@ export default function useCoreData() {
         getRoomById,
         getSessions,
         getSessionById,
-        getComprehensionScores
+        getComprehensionScores,
+        getQuestions
     } = useApi()
     const [enableFetchRooms, setEnableFetchRooms] = useState(false)
     const [roomIdForRoom, setRoomIdForRoom] = useState<string | null>(null)
     const [roomIdForSessions, setRoomIdForSessions] = useState<string | null>(null)
     const [sessionId, setSessionId] = useState<string | null>(null)
     const [sessionIdForScores, setSessionIdForScores] = useState<string | null>(null)
+    const [sessionIdForQuestions, setSessionIdForQuestions] = useState<string | null>(null)
 
     // --- rooms ---
 
@@ -26,19 +28,19 @@ export default function useCoreData() {
     // desperately need to combine owned and joined room queries into 1
     const ownedRooms = useQuery({
         queryKey: ['rooms', 'owned'],
-        queryFn: useCallback(getOwnedRooms, [getOwnedRooms]),
+        queryFn: getOwnedRooms,
         enabled: enableFetchRooms
     })
 
     const joinedRooms = useQuery({
         queryKey: ['rooms', 'joined'],
-        queryFn: useCallback(getJoinedRooms, [getJoinedRooms]),
+        queryFn: getJoinedRooms,
         enabled: enableFetchRooms
     })
 
     const room = useQuery({
         queryKey: ['rooms', roomIdForRoom],
-        queryFn: useCallback(() => getRoomById(roomIdForRoom!), [getRoomById, roomIdForRoom]),
+        queryFn: () => getRoomById(roomIdForRoom!),
         enabled: !!roomIdForRoom
     })
 
@@ -68,6 +70,8 @@ export default function useCoreData() {
         setSessionId(id)
     }
 
+    // --- scores ---
+
     const scores = useQuery({
         queryKey: ['comprehensionScores', sessionIdForScores],
         queryFn: () => getComprehensionScores(sessionIdForScores!),
@@ -76,6 +80,18 @@ export default function useCoreData() {
 
     const fetchScores = (id: string) => {
         setSessionIdForScores(id)
+    }
+
+    // --- questions ---
+
+    const questions = useQuery({
+        queryKey: ['questions', sessionIdForQuestions],
+        queryFn: () => getQuestions(sessionIdForQuestions!),
+        enabled: !!sessionIdForQuestions
+    })
+
+    const fetchQuestions = (id: string) => {
+        setSessionIdForQuestions(id)
     }
     
     return {
@@ -89,6 +105,8 @@ export default function useCoreData() {
         fetchSessions,
         fetchSessionById,
         scores,
-        fetchScores
+        fetchScores,
+        questions,
+        fetchQuestions
     }
 }
