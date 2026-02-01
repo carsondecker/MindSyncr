@@ -1,4 +1,4 @@
-import z, { json } from "zod"
+import z from "zod"
 import type { ApiFetch } from "./client"
 import { comprehensionScoreSchema, createComprehensionScoreRequestSchema, type ComprehensionScore, type CreateComprehensionScoreRequest } from "./models/comprehensionScores"
 
