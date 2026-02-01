@@ -10,12 +10,12 @@ export default function mergeScores(
   const seen = new Set(prev.scores.seen)
 
   for (const score of incoming) {
-    if (!seen.has(score.id)) {
-      seen.add(score.id)
-      history.push(score)
-    } else {
-        return prev
+    if (seen.has(score.id)) {
+      continue
     }
+      
+    seen.add(score.id)
+    history.push(score)
 
     const current = latest[score.user_id]
     if (

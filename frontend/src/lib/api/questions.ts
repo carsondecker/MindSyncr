@@ -3,7 +3,7 @@ import type { ApiFetch } from "./client";
 import { createQuestionRequestSchema, questionSchema, type CreateQuestionRequest, type Question } from "./models/questions";
 
 export async function getQuestionsApi(apiFetch: ApiFetch, session_id: string): Promise<Question[]> {
-    const data = await apiFetch<Question[]>(`sessions/${session_id}/questions`, {
+    const data = await apiFetch<Question[]>(`/sessions/${session_id}/questions`, {
         method: "GET",
     })
     

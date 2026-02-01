@@ -1,5 +1,9 @@
 import ComprehensionInput from "@/components/comprehensionInput";
+import Questions from "@/components/question";
+import { useAuth } from "@/lib/context/AuthContext";
 import useComprehensionScoreMutations from "@/lib/hooks/useComprehensionScoreMutations";
+import useQuestionMutations from "@/lib/hooks/useQuestionMutations";
+import useQuestions from "@/lib/hooks/useQuestions";
 import { useSessionEvents } from "@/lib/hooks/useSessionEvents";
 import useSessions from "@/lib/hooks/useSessions";
 import { useEffect } from "react";
@@ -7,17 +11,33 @@ import { useParams } from "react-router-dom";
 
 export default function ViewerDashboardPage() {
     const { session_id } = useParams()
-    const { connected, status } = useSessionEvents(session_id!)
+    const { user } = useAuth()
+    const { state, connected, status, handleHydrateQuestions } = useSessionEvents(session_id!)
 
     const { fetchSessionById, session } = useSessions()
     const { createScore } = useComprehensionScoreMutations(session_id!)
+    const { questions, fetchQuestions } = useQuestions()
+    const { createQuestion } = useQuestionMutations(session_id!)
 
     useEffect(() => {
         fetchSessionById(session_id!)
+        fetchQuestions(session_id!)
     }, [])
 
+    useEffect(() => {
+        if (questions.isSuccess && questions.data && session_id) {
+            handleHydrateQuestions(session_id, questions.data)
+        }
+    }, [questions.isSuccess, questions.data]);
+
+    // TODO: add validation
     const handleScoreSubmit = (score: number) => {
-        createScore.mutate({ score })
+        createScore.mutateAsync({ score })
+    }
+
+    // TODO: add validation
+    const handleQuestionSubmit = (text: string) => {
+        createQuestion.mutateAsync({ text })
     }
     
     if (session.isPending) {
@@ -38,10 +58,14 @@ export default function ViewerDashboardPage() {
 
     return (
         <>
-            <h2>Input Scores</h2>
-            <div className="flex justify-center">
+            <div className="flex flex-col justify-center items-center">
                 <ComprehensionInput
                     onScoreSubmit={handleScoreSubmit}
+                />
+                <Questions
+                    questions={state.questions.current}
+                    userId={user!.id}
+                    onQuestionSubmit={handleQuestionSubmit}
                 />
             </div>
             

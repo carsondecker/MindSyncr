@@ -1,5 +1,8 @@
 import ComprehensionBar from "@/components/comprehensionBar";
+import Questions from "@/components/question";
+import { useAuth } from "@/lib/context/AuthContext";
 import useComprehensionScores from "@/lib/hooks/useComprehensionScores";
+import useQuestions from "@/lib/hooks/useQuestions";
 import { useSessionEvents } from "@/lib/hooks/useSessionEvents";
 import useSessions from "@/lib/hooks/useSessions";
 import { useEffect } from "react";
@@ -7,6 +10,9 @@ import { useParams } from "react-router-dom";
 
 export default function PresenterDashboardPage() {
     const { session_id } = useParams()
+
+    const { user } = useAuth()
+
     const { state, connected, status, handleHydrateScores } = useSessionEvents(session_id!)
 
     const { session, fetchSessionById } = useSessions()
@@ -22,7 +28,6 @@ export default function PresenterDashboardPage() {
             handleHydrateScores(session_id, scores.data)
         }
     }, [scores.isSuccess, scores.data]);
-
     
     if (session.isPending || scores.isPending) {
         return <div>Loading…</div>
@@ -42,11 +47,16 @@ export default function PresenterDashboardPage() {
 
     return (
         <>
-            <h2>Live Scores</h2>
-            <ComprehensionBar
+            <div className="flex flex-col justify-center">
+                <ComprehensionBar
                 userScores={state.scores.latest}
                 showCounts={true}
-            />
+                />
+                {/* <Questions
+                    questions={state.questions.current}
+                    userId={user!.id}
+                /> */}
+            </div>
         </>
     )
 }

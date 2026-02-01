@@ -1,5 +1,6 @@
 import z from "zod";
 import { comprehensionScoreSchema } from "../../api/models/comprehensionScores";
+import { questionSchema } from "@/lib/api/models/questions";
 
 export const eventSchema = z.object({
   event_id: z.uuid(),
@@ -12,7 +13,7 @@ export const eventSchema = z.object({
   data: z.unknown(),
 })
 
-export const comprehensionScoreEventSchema = eventSchema.extend({
+export const createComprehensionScoreEventSchema = eventSchema.extend({
   event_type: z.enum(["created"]),
   entity: z.literal("comprehension_scores"),
   data: z.string()
@@ -40,11 +41,41 @@ export const hydrateScoresEventSchema = eventSchema.extend({
     .pipe(z.array(comprehensionScoreSchema)),
 })
 
+export const createQuestionEventSchema = eventSchema.extend({
+  event_type: z.enum(["created"]),
+  entity: z.literal("questions"),
+  data: z.string()
+    .transform((str) => {
+      try {
+        return JSON.parse(str);
+      } catch {
+        throw new Error("Invalid JSON in data field");
+      }
+    })
+    .pipe(questionSchema),
+})
+
+export const hydrateQuestionsEventSchema = eventSchema.extend({
+  event_type: z.literal("hydrate"),
+  entity: z.literal("questions"),
+  data: z.string()
+    .transform((str) => {
+      try {
+        return JSON.parse(str);
+      } catch {
+        throw new Error("Invalid JSON in data field");
+      }
+    })
+    .pipe(z.array(questionSchema)),
+})
+
 export const unknownEventSchema = eventSchema
 
 export const eventUnionSchema = z.union([
   hydrateScoresEventSchema,
-  comprehensionScoreEventSchema,
+  createComprehensionScoreEventSchema,
+  hydrateQuestionsEventSchema,
+  createQuestionEventSchema,
   unknownEventSchema
 ])
 
