@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/carsondecker/MindSyncr/utils"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -12,10 +13,10 @@ type BaseHandler interface {
 	GetConfig() *Config
 }
 
-func DecodeAndValidate[T any](r *http.Request, validator *validator.Validate) (T, *ServiceError) {
+func DecodeAndValidate[T any](r *http.Request, validator *validator.Validate) (T, *utils.ServiceError) {
 	var data T
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		return data, &ServiceError{
+		return data, &utils.ServiceError{
 			StatusCode: http.StatusBadRequest,
 			Code:       ErrBadRequest,
 			Message:    fmt.Sprintf("failed to decode data: %s", err.Error()),
@@ -24,7 +25,7 @@ func DecodeAndValidate[T any](r *http.Request, validator *validator.Validate) (T
 
 	err := validator.Struct(data)
 	if err != nil {
-		return data, &ServiceError{
+		return data, &utils.ServiceError{
 			StatusCode: http.StatusUnprocessableEntity,
 			Code:       ErrValidationFailed,
 			Message:    err.Error(),
@@ -34,13 +35,13 @@ func DecodeAndValidate[T any](r *http.Request, validator *validator.Validate) (T
 	return data, nil
 }
 
-func GetClaims(r *http.Request, validator *validator.Validate) (*Claims, *ServiceError) {
+func GetClaims(r *http.Request, validator *validator.Validate) (*Claims, *utils.ServiceError) {
 	ctx := r.Context()
 
 	raw := ctx.Value(UserContextKey)
 	claims, ok := raw.(*Claims)
 	if !ok || claims == nil {
-		return nil, &ServiceError{
+		return nil, &utils.ServiceError{
 			StatusCode: http.StatusUnauthorized,
 			Code:       ErrGetUserDataFail,
 			Message:    "failed to get user claims from context",
@@ -49,7 +50,7 @@ func GetClaims(r *http.Request, validator *validator.Validate) (*Claims, *Servic
 
 	err := validator.Struct(claims)
 	if err != nil {
-		return nil, &ServiceError{
+		return nil, &utils.ServiceError{
 			StatusCode: http.StatusUnprocessableEntity,
 			Code:       ErrValidationFailed,
 			Message:    err.Error(),
@@ -64,27 +65,27 @@ func BaseHandlerFuncWithBodyAndClaims[Req, Res any](
 	w http.ResponseWriter,
 	r *http.Request,
 	successCode int,
-	serviceFunc func(data Req, claims *Claims) (Res, *ServiceError),
+	serviceFunc func(data Req, claims *Claims) (Res, *utils.ServiceError),
 ) {
 	data, sErr := DecodeAndValidate[Req](r, h.GetConfig().Validator)
 	if sErr != nil {
-		SError(w, sErr)
+		utils.SError(w, sErr)
 		return
 	}
 
 	claims, sErr := GetClaims(r, h.GetConfig().Validator)
 	if sErr != nil {
-		SError(w, sErr)
+		utils.SError(w, sErr)
 		return
 	}
 
 	res, sErr := serviceFunc(data, claims)
 	if sErr != nil {
-		SError(w, sErr)
+		utils.SError(w, sErr)
 		return
 	}
 
-	Success(w, successCode, res)
+	utils.Success(w, successCode, res)
 }
 
 func BaseHandlerFuncWithClaims[Res any](
@@ -92,21 +93,21 @@ func BaseHandlerFuncWithClaims[Res any](
 	w http.ResponseWriter,
 	r *http.Request,
 	successCode int,
-	serviceFunc func(claims *Claims) (Res, *ServiceError),
+	serviceFunc func(claims *Claims) (Res, *utils.ServiceError),
 ) {
 	claims, sErr := GetClaims(r, h.GetConfig().Validator)
 	if sErr != nil {
-		SError(w, sErr)
+		utils.SError(w, sErr)
 		return
 	}
 
 	res, sErr := serviceFunc(claims)
 	if sErr != nil {
-		SError(w, sErr)
+		utils.SError(w, sErr)
 		return
 	}
 
-	Success(w, successCode, res)
+	utils.Success(w, successCode, res)
 }
 
 func BaseHandlerFuncWithBody[Req, Res any](
@@ -114,21 +115,21 @@ func BaseHandlerFuncWithBody[Req, Res any](
 	w http.ResponseWriter,
 	r *http.Request,
 	successCode int,
-	serviceFunc func(data Req) (Res, *ServiceError),
+	serviceFunc func(data Req) (Res, *utils.ServiceError),
 ) {
 	data, sErr := DecodeAndValidate[Req](r, h.GetConfig().Validator)
 	if sErr != nil {
-		SError(w, sErr)
+		utils.SError(w, sErr)
 		return
 	}
 
 	res, sErr := serviceFunc(data)
 	if sErr != nil {
-		SError(w, sErr)
+		utils.SError(w, sErr)
 		return
 	}
 
-	Success(w, successCode, res)
+	utils.Success(w, successCode, res)
 }
 
 func BaseHandlerFunc[Res any](
@@ -136,13 +137,13 @@ func BaseHandlerFunc[Res any](
 	w http.ResponseWriter,
 	r *http.Request,
 	successCode int,
-	serviceFunc func() (Res, *ServiceError),
+	serviceFunc func() (Res, *utils.ServiceError),
 ) {
 	res, sErr := serviceFunc()
 	if sErr != nil {
-		SError(w, sErr)
+		utils.SError(w, sErr)
 		return
 	}
 
-	Success(w, successCode, res)
+	utils.Success(w, successCode, res)
 }
