@@ -7,7 +7,8 @@ export default function useQuestionMutations(session_id?: string) {
     const [sessionId, setSessionId] = useState(session_id)
 
     const {
-        createQuestion: createQuestionApi
+        createQuestion,
+        deleteQuestion
     } = useApi()
 
     const setQuestionSessionId = (id: string) => {
@@ -15,16 +16,26 @@ export default function useQuestionMutations(session_id?: string) {
     }
 
     // TODO: add optimistic updates
-    const createQuestion = useMutation({
+    const createQuestionMutation = useMutation({
         mutationKey: ['createQuestion'],
-        mutationFn: (input: CreateQuestionRequest) => createQuestionApi(sessionId!, input),
+        mutationFn: (input: CreateQuestionRequest) => createQuestion(sessionId!, input),
         onSettled: (data, err, variables, onMutateResult, context) => {
             context.client.invalidateQueries({ queryKey: ['questions', sessionId] })
         }
     })
 
+    // TODO: add optimistic updates
+    const deleteQuestionMutation = useMutation({
+            mutationKey: ['deleteQuestion'],
+            mutationFn: (question_id: string) => deleteQuestion(question_id),
+            onSettled: (data, err, variables, onMutateResult, context) => {
+                context.client.invalidateQueries({ queryKey: ['questions', sessionId] })
+            }
+        })
+
     return {
         setQuestionSessionId,
-        createQuestion
+        createQuestion: createQuestionMutation,
+        deleteQuestion: deleteQuestionMutation
     }
 }

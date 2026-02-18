@@ -105,6 +105,16 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 
 	router.Handle("/sessions/", http.StripPrefix("/sessions", sessionsRouter))
 
+	questionsRouter := http.NewServeMux()
+
+	questionsRouter.Handle("DELETE /{question_id}", sutils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembershipOnly(
+			middlewareHandler.CheckSessionActive(http.HandlerFunc(questionsHandler.HandleDeleteQuestion)),
+		),
+	))
+
+	router.Handle("/questions/", http.StripPrefix("/questions", questionsRouter))
+
 	wsRouter := http.NewServeMux()
 	wsHandler := ws.NewWSHandler(cfg)
 

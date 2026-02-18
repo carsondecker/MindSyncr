@@ -17,7 +17,7 @@ export async function getComprehensionScoresApi(apiFetch: ApiFetch, session_id: 
 export async function createComprehensionScoreApi(apiFetch: ApiFetch, session_id: string, input: CreateComprehensionScoreRequest): Promise<void> {
     const validInput = createComprehensionScoreRequestSchema.parse(input)
     
-    await apiFetch<ComprehensionScore[]>(`/sessions/${session_id}/comprehension-scores`, {
+    await apiFetch(`/sessions/${session_id}/comprehension-scores`, {
         method: "POST",
         body: JSON.stringify(validInput)
     })

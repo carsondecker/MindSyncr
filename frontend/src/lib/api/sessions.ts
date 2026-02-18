@@ -38,25 +38,25 @@ export async function createSessionApi(apiFetch: ApiFetch, room_id: string, inpu
 }
 
 export async function deleteSessionApi(apiFetch: ApiFetch, session_id: string): Promise<void> {
-    await apiFetch<void>(`/sessions/${session_id}`, {
+    await apiFetch(`/sessions/${session_id}`, {
         method: "DELETE",
     })
 }
 
 export async function endSessionApi(apiFetch: ApiFetch, session_id: string): Promise<void> {
-    await apiFetch<void>(`/sessions/${session_id}/end`, {
+    await apiFetch(`/sessions/${session_id}/end`, {
         method: "POST",
     })
 }
 
 export async function joinSessionApi(apiFetch: ApiFetch, session_id: string): Promise<void> {
-    await apiFetch<void>(`/sessions/${session_id}/join`, {
+    await apiFetch(`/sessions/${session_id}/join`, {
         method: "POST",
     })
 }
 
 export async function leaveSessionApi(apiFetch: ApiFetch, session_id: string): Promise<void> {
-    await apiFetch<void>(`/sessions/${session_id}/leave`, {
+    await apiFetch(`/sessions/${session_id}/leave`, {
         method: "POST",
     })
 }

@@ -68,3 +68,19 @@ func (h *QuestionsHandler) getQuestionsService(ctx context.Context, sessionId uu
 
 	return questions, nil
 }
+
+func (h *QuestionsHandler) deleteQuestionService(ctx context.Context, userId, questionId uuid.UUID) *utils.ServiceError {
+	err := h.cfg.Queries.DeleteQuestion(ctx, sqlc.DeleteQuestionParams{
+		UserID: userId,
+		ID:     questionId,
+	})
+	if err != nil {
+		return &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrDbtxFail,
+			Message:    err.Error(),
+		}
+	}
+
+	return nil
+}

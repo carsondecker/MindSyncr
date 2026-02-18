@@ -17,8 +17,14 @@ export async function getQuestionsApi(apiFetch: ApiFetch, session_id: string): P
 export async function createQuestionApi(apiFetch: ApiFetch, session_id: string, input: CreateQuestionRequest): Promise<void> {
     const validInput = createQuestionRequestSchema.parse(input)
 
-    await apiFetch<Question[]>(`/sessions/${session_id}/questions`, {
+    await apiFetch(`/sessions/${session_id}/questions`, {
         method: "POST",
         body: JSON.stringify(validInput)
+    })
+}
+
+export async function deleteQuestionApi(apiFetch: ApiFetch, question_id: string): Promise<void> {
+    await apiFetch(`/questions/${question_id}`, {
+        method: "DELETE",
     })
 }

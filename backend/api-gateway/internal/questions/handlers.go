@@ -53,3 +53,22 @@ func (h *QuestionsHandler) HandleGetQuestions(w http.ResponseWriter, r *http.Req
 		},
 	)
 }
+
+func (h *QuestionsHandler) HandleDeleteQuestion(w http.ResponseWriter, r *http.Request) {
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
+		http.StatusOK,
+		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
+			questionId, sErr := utils.GetUUIDPathValue(r, "question_id")
+			if sErr != nil {
+				return struct{}{}, sErr
+			}
+
+			sErr = h.deleteQuestionService(r.Context(), claims.UserId, questionId)
+			if sErr != nil {
+				return struct{}{}, sErr
+			}
+
+			return struct{}{}, nil
+		},
+	)
+}

@@ -17,7 +17,7 @@ export default function ViewerDashboardPage() {
     const { fetchSessionById, session } = useSessions()
     const { createScore } = useComprehensionScoreMutations(session_id!)
     const { questions, fetchQuestions } = useQuestions()
-    const { createQuestion } = useQuestionMutations(session_id!)
+    const { createQuestion, deleteQuestion } = useQuestionMutations(session_id!)
 
     useEffect(() => {
         fetchSessionById(session_id!)
@@ -38,6 +38,10 @@ export default function ViewerDashboardPage() {
     // TODO: add validation
     const handleQuestionSubmit = (text: string) => {
         createQuestion.mutateAsync({ text })
+    }
+
+    const handleQuestionDelete = (id: string) => {
+        deleteQuestion.mutateAsync(id)
     }
     
     if (session.isPending) {
@@ -66,6 +70,7 @@ export default function ViewerDashboardPage() {
                     questions={state.questions.current}
                     userId={user!.id}
                     onQuestionSubmit={handleQuestionSubmit}
+                    onQuestionDelete={handleQuestionDelete}
                 />
             </div>
             

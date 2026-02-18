@@ -36,10 +36,10 @@ export async function getRoomByIdApi(apiFetch: ApiFetch, room_id: string): Promi
   return response
 }
 
-export async function createRoomApi(apiFetch: ApiFetch, input: CreateRoomRequest) {
+export async function createRoomApi(apiFetch: ApiFetch, input: CreateRoomRequest): Promise<Room> {
   const validInput = createRoomRequestSchema.parse(input)
   
-  const data = await apiFetch<CreateRoomRequest>("/rooms/", {
+  const data = await apiFetch("/rooms/", {
     method: "POST",
     body: JSON.stringify(validInput),
   })

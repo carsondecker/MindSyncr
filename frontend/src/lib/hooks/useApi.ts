@@ -7,7 +7,7 @@ import { createSessionApi, deleteSessionApi, endSessionApi, getSessionByIdApi, g
 import type { CreateSessionRequest } from "../api/models/sessions"
 import { createComprehensionScoreApi, getComprehensionScoresApi } from "../api/comprehensionScores"
 import type { CreateComprehensionScoreRequest } from "../api/models/comprehensionScores"
-import { createQuestionApi, getQuestionsApi } from "../api/questions"
+import { createQuestionApi, deleteQuestionApi, getQuestionsApi } from "../api/questions"
 import type { CreateQuestionRequest } from "../api/models/questions"
 
 export function useApi() {
@@ -39,6 +39,7 @@ export function useApi() {
 
   const getQuestions = useCallback((session_id: string) => getQuestionsApi(apiFetch, session_id), [apiFetch])
   const createQuestion = useCallback((session_id: string, input: CreateQuestionRequest) => createQuestionApi(apiFetch, session_id, input), [apiFetch])
+  const deleteQuestion = useCallback((question_id: string) => deleteQuestionApi(apiFetch, question_id), [apiFetch])
 
   return {
     apiFetch,
@@ -59,6 +60,7 @@ export function useApi() {
     getComprehensionScores,
     createComprehensionScore,
     getQuestions,
-    createQuestion
+    createQuestion,
+    deleteQuestion
   }
 }

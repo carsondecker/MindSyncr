@@ -9,12 +9,13 @@ type QuestionsProps = {
   questions: Record<string, Question>,
   userId: string,
   onQuestionSubmit?: (text: string) => void
+  onQuestionDelete?: (id: string) => void
 }
 
 type SortOption = "latest" | "popular"
 
 // TODO: Add version that presenters cannot send questions, may need to move adding questions to a new component
-export default function Questions({ questions, userId, onQuestionSubmit }: QuestionsProps) {
+export default function Questions({ questions, userId, onQuestionSubmit, onQuestionDelete }: QuestionsProps) {
   const [newQuestion, setNewQuestion] = useState("")
   const [sortBy, setSortBy] = useState<SortOption>("latest")
   const [editingQuestion, setEditingQuestion] = useState<string | null>(null)
@@ -55,7 +56,9 @@ export default function Questions({ questions, userId, onQuestionSubmit }: Quest
   }
 
   const handleDeleteQuestion = (id: string) => {
-    // TODO: Implement delete question
+    if (onQuestionDelete) {
+      onQuestionDelete(id)
+  }
   }
 
   const handleStartEdit = (question: Question) => {

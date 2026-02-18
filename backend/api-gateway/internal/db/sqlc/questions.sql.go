@@ -11,6 +11,22 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteQuestion = `-- name: DeleteQuestion :exec
+DELETE FROM questions
+WHERE user_id = $1
+    AND id = $2
+`
+
+type DeleteQuestionParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	ID     uuid.UUID `json:"id"`
+}
+
+func (q *Queries) DeleteQuestion(ctx context.Context, arg DeleteQuestionParams) error {
+	_, err := q.db.ExecContext(ctx, deleteQuestion, arg.UserID, arg.ID)
+	return err
+}
+
 const getQuestionsBySession = `-- name: GetQuestionsBySession :many
 SELECT id, user_id, session_id, text, is_answered, answered_at, created_at, updated_at
 FROM questions
