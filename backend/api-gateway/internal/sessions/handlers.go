@@ -3,25 +3,26 @@ package sessions
 import (
 	"net/http"
 
-	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/carsondecker/MindSyncr/internal/sutils"
+	"github.com/carsondecker/MindSyncr/utils"
 )
 
 type SessionsHandler struct {
-	cfg *utils.Config
+	cfg *sutils.Config
 }
 
-func NewSessionsHandler(cfg *utils.Config) *SessionsHandler {
+func NewSessionsHandler(cfg *sutils.Config) *SessionsHandler {
 	return &SessionsHandler{
 		cfg,
 	}
 }
 
-func (h *SessionsHandler) GetConfig() *utils.Config {
+func (h *SessionsHandler) GetConfig() *sutils.Config {
 	return h.cfg
 }
 
 func (h *SessionsHandler) HandleCreateSession(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
+	sutils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
 		http.StatusCreated,
 		func(data CreateSessionRequest, claims *utils.Claims) (Session, *utils.ServiceError) {
 			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
@@ -40,7 +41,7 @@ func (h *SessionsHandler) HandleCreateSession(w http.ResponseWriter, r *http.Req
 }
 
 func (h *SessionsHandler) HandleGetSessions(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) ([]Session, *utils.ServiceError) {
 			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
@@ -59,7 +60,7 @@ func (h *SessionsHandler) HandleGetSessions(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *SessionsHandler) HandleGetSession(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (Session, *utils.ServiceError) {
 			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
@@ -78,7 +79,7 @@ func (h *SessionsHandler) HandleGetSession(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *SessionsHandler) HandleEndSession(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
 			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
@@ -97,7 +98,7 @@ func (h *SessionsHandler) HandleEndSession(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *SessionsHandler) HandleDeleteSession(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
 			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
@@ -117,7 +118,7 @@ func (h *SessionsHandler) HandleDeleteSession(w http.ResponseWriter, r *http.Req
 
 // TODO: stop users from joining a session they own
 func (h *SessionsHandler) HandleJoinSession(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
 			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
@@ -137,7 +138,7 @@ func (h *SessionsHandler) HandleJoinSession(w http.ResponseWriter, r *http.Reque
 
 // TODO: stop users from leaving a session they are not a member of
 func (h *SessionsHandler) HandleLeaveSession(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
 			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")

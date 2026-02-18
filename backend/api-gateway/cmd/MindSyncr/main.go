@@ -13,7 +13,8 @@ import (
 
 	"github.com/carsondecker/MindSyncr/internal/api"
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
-	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/carsondecker/MindSyncr/internal/sutils"
+	"github.com/carsondecker/MindSyncr/utils"
 )
 
 func main() {
@@ -52,7 +53,7 @@ func main() {
 
 	queries := sqlc.New(db)
 
-	config := utils.NewConfig(db, queries, redisClient)
+	config := sutils.NewConfig(db, queries, redisClient)
 
 	config.Router = api.GetRouter(config)
 

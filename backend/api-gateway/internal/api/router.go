@@ -8,17 +8,18 @@ import (
 	"github.com/carsondecker/MindSyncr/internal/questions"
 	"github.com/carsondecker/MindSyncr/internal/rooms"
 	"github.com/carsondecker/MindSyncr/internal/sessions"
-	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/carsondecker/MindSyncr/internal/sutils"
 	"github.com/carsondecker/MindSyncr/internal/ws"
+	"github.com/carsondecker/MindSyncr/utils"
 )
 
-func GetRouter(cfg *utils.Config) *http.ServeMux {
+func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	baseRouter := http.NewServeMux()
 	router := http.NewServeMux()
 
 	baseRouter.Handle("/api/v1/", http.StripPrefix("/api/v1", router))
 
-	middlewareHandler := utils.NewMiddlewareHandler(cfg)
+	middlewareHandler := sutils.NewMiddlewareHandler(cfg)
 
 	router.HandleFunc("GET /healthz", healthzHandler)
 
@@ -27,34 +28,34 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	authRouter.HandleFunc("POST /register", authHandler.HandleRegister)
 	authRouter.HandleFunc("POST /login", authHandler.HandleLogin)
 	authRouter.HandleFunc("POST /refresh", authHandler.HandleRefresh)
-	authRouter.Handle("POST /logout", utils.AuthMiddleware(http.HandlerFunc(authHandler.HandleLogout)))
-	authRouter.Handle("GET /me", utils.AuthMiddleware(http.HandlerFunc(authHandler.HandleGetUser)))
+	authRouter.Handle("POST /logout", sutils.AuthMiddleware(http.HandlerFunc(authHandler.HandleLogout)))
+	authRouter.Handle("GET /me", sutils.AuthMiddleware(http.HandlerFunc(authHandler.HandleGetUser)))
 
 	router.Handle("/auth/", http.StripPrefix("/auth", authRouter))
 
 	roomsRouter := http.NewServeMux()
 	roomsHandler := rooms.NewRoomsHandler(cfg)
 
-	roomsRouter.Handle("POST /", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleCreateRoom)))
-	roomsRouter.Handle("GET /", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleGetRooms)))
-	roomsRouter.Handle("GET /{room_id}", utils.AuthMiddleware(
+	roomsRouter.Handle("POST /", sutils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleCreateRoom)))
+	roomsRouter.Handle("GET /", sutils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleGetRooms)))
+	roomsRouter.Handle("GET /{room_id}", sutils.AuthMiddleware(
 		middlewareHandler.CheckRoomMembershipByRoomId(http.HandlerFunc(roomsHandler.HandleGetRoom)),
 	))
-	roomsRouter.Handle("PATCH /{room_id}", utils.AuthMiddleware(
+	roomsRouter.Handle("PATCH /{room_id}", sutils.AuthMiddleware(
 		middlewareHandler.CheckRoomOwnershipByRoomId(http.HandlerFunc(roomsHandler.HandleUpdateRoom)),
 	))
-	roomsRouter.Handle("DELETE /{room_id}", utils.AuthMiddleware(
+	roomsRouter.Handle("DELETE /{room_id}", sutils.AuthMiddleware(
 		middlewareHandler.CheckRoomOwnershipByRoomId(http.HandlerFunc(roomsHandler.HandleDeleteRoom)),
 	))
-	roomsRouter.Handle("POST /{join_code}/join", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleJoinRoom)))
-	roomsRouter.Handle("POST /{room_id}/leave", utils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleLeaveRoom)))
+	roomsRouter.Handle("POST /{join_code}/join", sutils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleJoinRoom)))
+	roomsRouter.Handle("POST /{room_id}/leave", sutils.AuthMiddleware(http.HandlerFunc(roomsHandler.HandleLeaveRoom)))
 
 	sessionsHandler := sessions.NewSessionsHandler(cfg)
 
-	roomsRouter.Handle("POST /{room_id}/sessions", utils.AuthMiddleware(
+	roomsRouter.Handle("POST /{room_id}/sessions", sutils.AuthMiddleware(
 		middlewareHandler.CheckRoomOwnershipByRoomId(http.HandlerFunc(sessionsHandler.HandleCreateSession)),
 	))
-	roomsRouter.Handle("GET /{room_id}/sessions", utils.AuthMiddleware(
+	roomsRouter.Handle("GET /{room_id}/sessions", sutils.AuthMiddleware(
 		middlewareHandler.CheckRoomMembershipByRoomId(http.HandlerFunc(sessionsHandler.HandleGetSessions)),
 	))
 
@@ -62,19 +63,19 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 
 	sessionsRouter := http.NewServeMux()
 
-	sessionsRouter.Handle("GET /{session_id}", utils.AuthMiddleware(
+	sessionsRouter.Handle("GET /{session_id}", sutils.AuthMiddleware(
 		middlewareHandler.CheckRoomMembershipBySessionId(http.HandlerFunc(sessionsHandler.HandleGetSession)),
 	))
-	sessionsRouter.Handle("DELETE /{session_id}", utils.AuthMiddleware(
+	sessionsRouter.Handle("DELETE /{session_id}", sutils.AuthMiddleware(
 		middlewareHandler.CheckRoomOwnershipBySessionId(http.HandlerFunc(sessionsHandler.HandleDeleteSession)),
 	))
-	sessionsRouter.Handle("POST /{session_id}/end", utils.AuthMiddleware(
+	sessionsRouter.Handle("POST /{session_id}/end", sutils.AuthMiddleware(
 		middlewareHandler.CheckRoomOwnershipBySessionId(http.HandlerFunc(sessionsHandler.HandleEndSession)),
 	))
-	sessionsRouter.Handle("POST /{session_id}/join", utils.AuthMiddleware(
+	sessionsRouter.Handle("POST /{session_id}/join", sutils.AuthMiddleware(
 		middlewareHandler.CheckRoomMembershipBySessionId(http.HandlerFunc(sessionsHandler.HandleJoinSession)),
 	))
-	sessionsRouter.Handle("POST /{session_id}/leave", utils.AuthMiddleware(
+	sessionsRouter.Handle("POST /{session_id}/leave", sutils.AuthMiddleware(
 		middlewareHandler.CheckRoomMembershipBySessionId(
 			middlewareHandler.CheckSessionActive(http.HandlerFunc(sessionsHandler.HandleLeaveSession)),
 		),
@@ -82,23 +83,23 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 
 	comprehensionScoresHandler := comprehensionscores.NewComprehensionScoresHandler(cfg)
 
-	sessionsRouter.Handle("POST /{session_id}/comprehension-scores", utils.AuthMiddleware(
+	sessionsRouter.Handle("POST /{session_id}/comprehension-scores", sutils.AuthMiddleware(
 		middlewareHandler.CheckSessionMembershipOnly(
 			middlewareHandler.CheckSessionActive(http.HandlerFunc(comprehensionScoresHandler.HandleCreateComprehensionScore)),
 		),
 	))
-	sessionsRouter.Handle("GET /{session_id}/comprehension-scores", utils.AuthMiddleware(
+	sessionsRouter.Handle("GET /{session_id}/comprehension-scores", sutils.AuthMiddleware(
 		middlewareHandler.CheckSessionMembership(http.HandlerFunc(comprehensionScoresHandler.HandleGetComprehensionScores)),
 	))
 
 	questionsHandler := questions.NewQuestionsHandler(cfg)
 
-	sessionsRouter.Handle("POST /{session_id}/questions", utils.AuthMiddleware(
+	sessionsRouter.Handle("POST /{session_id}/questions", sutils.AuthMiddleware(
 		middlewareHandler.CheckSessionMembershipOnly(
 			middlewareHandler.CheckSessionActive(http.HandlerFunc(questionsHandler.HandleCreateQuestion)),
 		),
 	))
-	sessionsRouter.Handle("GET /{session_id}/questions", utils.AuthMiddleware(
+	sessionsRouter.Handle("GET /{session_id}/questions", sutils.AuthMiddleware(
 		middlewareHandler.CheckSessionMembership(http.HandlerFunc(questionsHandler.HandleGetQuestions)),
 	))
 
@@ -107,7 +108,7 @@ func GetRouter(cfg *utils.Config) *http.ServeMux {
 	wsRouter := http.NewServeMux()
 	wsHandler := ws.NewWSHandler(cfg)
 
-	wsRouter.Handle("GET /{session_id}", utils.AuthMiddleware(
+	wsRouter.Handle("GET /{session_id}", sutils.AuthMiddleware(
 		middlewareHandler.CheckSessionMembership(
 			middlewareHandler.CheckSessionActive(http.HandlerFunc(wsHandler.HandleGetWSTicket)),
 		),

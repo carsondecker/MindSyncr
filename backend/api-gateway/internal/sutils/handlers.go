@@ -1,4 +1,4 @@
-package utils
+package sutils
 
 import (
 	"encoding/json"
@@ -18,7 +18,7 @@ func DecodeAndValidate[T any](r *http.Request, validator *validator.Validate) (T
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		return data, &utils.ServiceError{
 			StatusCode: http.StatusBadRequest,
-			Code:       ErrBadRequest,
+			Code:       utils.ErrBadRequest,
 			Message:    fmt.Sprintf("failed to decode data: %s", err.Error()),
 		}
 	}
@@ -27,7 +27,7 @@ func DecodeAndValidate[T any](r *http.Request, validator *validator.Validate) (T
 	if err != nil {
 		return data, &utils.ServiceError{
 			StatusCode: http.StatusUnprocessableEntity,
-			Code:       ErrValidationFailed,
+			Code:       utils.ErrValidationFailed,
 			Message:    err.Error(),
 		}
 	}
@@ -35,15 +35,15 @@ func DecodeAndValidate[T any](r *http.Request, validator *validator.Validate) (T
 	return data, nil
 }
 
-func GetClaims(r *http.Request, validator *validator.Validate) (*Claims, *utils.ServiceError) {
+func GetClaims(r *http.Request, validator *validator.Validate) (*utils.Claims, *utils.ServiceError) {
 	ctx := r.Context()
 
 	raw := ctx.Value(UserContextKey)
-	claims, ok := raw.(*Claims)
+	claims, ok := raw.(*utils.Claims)
 	if !ok || claims == nil {
 		return nil, &utils.ServiceError{
 			StatusCode: http.StatusUnauthorized,
-			Code:       ErrGetUserDataFail,
+			Code:       utils.ErrGetUserDataFail,
 			Message:    "failed to get user claims from context",
 		}
 	}
@@ -52,7 +52,7 @@ func GetClaims(r *http.Request, validator *validator.Validate) (*Claims, *utils.
 	if err != nil {
 		return nil, &utils.ServiceError{
 			StatusCode: http.StatusUnprocessableEntity,
-			Code:       ErrValidationFailed,
+			Code:       utils.ErrValidationFailed,
 			Message:    err.Error(),
 		}
 	}
@@ -65,7 +65,7 @@ func BaseHandlerFuncWithBodyAndClaims[Req, Res any](
 	w http.ResponseWriter,
 	r *http.Request,
 	successCode int,
-	serviceFunc func(data Req, claims *Claims) (Res, *utils.ServiceError),
+	serviceFunc func(data Req, claims *utils.Claims) (Res, *utils.ServiceError),
 ) {
 	data, sErr := DecodeAndValidate[Req](r, h.GetConfig().Validator)
 	if sErr != nil {
@@ -93,7 +93,7 @@ func BaseHandlerFuncWithClaims[Res any](
 	w http.ResponseWriter,
 	r *http.Request,
 	successCode int,
-	serviceFunc func(claims *Claims) (Res, *utils.ServiceError),
+	serviceFunc func(claims *utils.Claims) (Res, *utils.ServiceError),
 ) {
 	claims, sErr := GetClaims(r, h.GetConfig().Validator)
 	if sErr != nil {

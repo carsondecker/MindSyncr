@@ -3,7 +3,7 @@ package ws
 import (
 	"net/http"
 
-	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/carsondecker/MindSyncr/utils"
 	"github.com/google/uuid"
 )
 

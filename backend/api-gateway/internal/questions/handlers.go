@@ -3,25 +3,26 @@ package questions
 import (
 	"net/http"
 
-	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/carsondecker/MindSyncr/internal/sutils"
+	"github.com/carsondecker/MindSyncr/utils"
 )
 
 type QuestionsHandler struct {
-	cfg *utils.Config
+	cfg *sutils.Config
 }
 
-func NewQuestionsHandler(cfg *utils.Config) *QuestionsHandler {
+func NewQuestionsHandler(cfg *sutils.Config) *QuestionsHandler {
 	return &QuestionsHandler{
 		cfg,
 	}
 }
 
-func (h *QuestionsHandler) GetConfig() *utils.Config {
+func (h *QuestionsHandler) GetConfig() *sutils.Config {
 	return h.cfg
 }
 
 func (h *QuestionsHandler) HandleCreateQuestion(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
+	sutils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
 		http.StatusCreated,
 		func(data CreateQuestionRequest, claims *utils.Claims) (Question, *utils.ServiceError) {
 			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
@@ -35,7 +36,7 @@ func (h *QuestionsHandler) HandleCreateQuestion(w http.ResponseWriter, r *http.R
 }
 
 func (h *QuestionsHandler) HandleGetQuestions(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFunc(h, w, r,
+	sutils.BaseHandlerFunc(h, w, r,
 		http.StatusOK,
 		func() ([]Question, *utils.ServiceError) {
 			session_id, sErr := utils.GetUUIDPathValue(r, "session_id")

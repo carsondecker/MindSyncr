@@ -3,25 +3,26 @@ package comprehensionscores
 import (
 	"net/http"
 
-	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/carsondecker/MindSyncr/internal/sutils"
+	"github.com/carsondecker/MindSyncr/utils"
 )
 
 type ComprehensionScoresHandler struct {
-	cfg *utils.Config
+	cfg *sutils.Config
 }
 
-func NewComprehensionScoresHandler(cfg *utils.Config) *ComprehensionScoresHandler {
+func NewComprehensionScoresHandler(cfg *sutils.Config) *ComprehensionScoresHandler {
 	return &ComprehensionScoresHandler{
 		cfg,
 	}
 }
 
-func (h *ComprehensionScoresHandler) GetConfig() *utils.Config {
+func (h *ComprehensionScoresHandler) GetConfig() *sutils.Config {
 	return h.cfg
 }
 
 func (h *ComprehensionScoresHandler) HandleCreateComprehensionScore(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
+	sutils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
 		http.StatusCreated,
 		func(data CreateComprehensionScoreRequest, claims *utils.Claims) (ComprehensionScore, *utils.ServiceError) {
 			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
@@ -40,7 +41,7 @@ func (h *ComprehensionScoresHandler) HandleCreateComprehensionScore(w http.Respo
 }
 
 func (h *ComprehensionScoresHandler) HandleGetComprehensionScores(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFunc(h, w, r,
+	sutils.BaseHandlerFunc(h, w, r,
 		http.StatusOK,
 		func() ([]ComprehensionScore, *utils.ServiceError) {
 			session_id, sErr := utils.GetUUIDPathValue(r, "session_id")

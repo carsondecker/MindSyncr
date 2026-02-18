@@ -1,10 +1,11 @@
-package utils
+package sutils
 
 import (
 	"context"
 	"net/http"
 
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
+	"github.com/carsondecker/MindSyncr/utils"
 )
 
 type contextKey string
@@ -29,13 +30,13 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("access_token")
 		if err != nil || cookie.Value == "" {
-			Error(w, http.StatusUnauthorized, ErrMissingAccessToken, "no access token cookie found")
+			utils.Error(w, http.StatusUnauthorized, utils.ErrMissingAccessToken, "no access token cookie found")
 			return
 		}
 
-		claims, err := GetClaimsFromToken(cookie.Value)
+		claims, err := utils.GetClaimsFromToken(cookie.Value)
 		if err != nil {
-			Error(w, http.StatusUnauthorized, ErrInvalidAccessToken, "invalid or expired token")
+			utils.Error(w, http.StatusUnauthorized, utils.ErrInvalidAccessToken, "invalid or expired token")
 			return
 		}
 
@@ -49,15 +50,15 @@ func (h *MiddlewareHandler) CheckRoomMembershipByRoomId(next http.Handler) http.
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		raw := ctx.Value(UserContextKey)
-		claims, ok := raw.(*Claims)
+		claims, ok := raw.(*utils.Claims)
 		if !ok || claims == nil {
-			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
 			return
 		}
 
-		roomId, sErr := GetUUIDPathValue(r, "room_id")
+		roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
 		if sErr != nil {
-			SError(w, sErr)
+			utils.SError(w, sErr)
 			return
 		}
 
@@ -66,7 +67,7 @@ func (h *MiddlewareHandler) CheckRoomMembershipByRoomId(next http.Handler) http.
 			UserID: claims.UserId,
 		})
 		if err != nil {
-			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
 
@@ -79,15 +80,15 @@ func (h *MiddlewareHandler) CheckRoomOwnershipByRoomId(next http.Handler) http.H
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		raw := ctx.Value(UserContextKey)
-		claims, ok := raw.(*Claims)
+		claims, ok := raw.(*utils.Claims)
 		if !ok || claims == nil {
-			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
 			return
 		}
 
-		roomId, sErr := GetUUIDPathValue(r, "room_id")
+		roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
 		if sErr != nil {
-			SError(w, sErr)
+			utils.SError(w, sErr)
 			return
 		}
 
@@ -96,7 +97,7 @@ func (h *MiddlewareHandler) CheckRoomOwnershipByRoomId(next http.Handler) http.H
 			OwnerID: claims.UserId,
 		})
 		if err != nil {
-			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
 
@@ -109,15 +110,15 @@ func (h *MiddlewareHandler) CheckRoomMembershipBySessionId(next http.Handler) ht
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		raw := ctx.Value(UserContextKey)
-		claims, ok := raw.(*Claims)
+		claims, ok := raw.(*utils.Claims)
 		if !ok || claims == nil {
-			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
 			return
 		}
 
-		sessionId, sErr := GetUUIDPathValue(r, "session_id")
+		sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
 		if sErr != nil {
-			SError(w, sErr)
+			utils.SError(w, sErr)
 			return
 		}
 
@@ -126,7 +127,7 @@ func (h *MiddlewareHandler) CheckRoomMembershipBySessionId(next http.Handler) ht
 			UserID: claims.UserId,
 		})
 		if err != nil {
-			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
 
@@ -139,15 +140,15 @@ func (h *MiddlewareHandler) CheckRoomOwnershipBySessionId(next http.Handler) htt
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		raw := ctx.Value(UserContextKey)
-		claims, ok := raw.(*Claims)
+		claims, ok := raw.(*utils.Claims)
 		if !ok || claims == nil {
-			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
 			return
 		}
 
-		sessionId, sErr := GetUUIDPathValue(r, "session_id")
+		sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
 		if sErr != nil {
-			SError(w, sErr)
+			utils.SError(w, sErr)
 			return
 		}
 
@@ -156,7 +157,7 @@ func (h *MiddlewareHandler) CheckRoomOwnershipBySessionId(next http.Handler) htt
 			OwnerID: claims.UserId,
 		})
 		if err != nil {
-			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
 
@@ -169,15 +170,15 @@ func (h *MiddlewareHandler) CheckSessionMembershipOnly(next http.Handler) http.H
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		raw := ctx.Value(UserContextKey)
-		claims, ok := raw.(*Claims)
+		claims, ok := raw.(*utils.Claims)
 		if !ok || claims == nil {
-			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
 			return
 		}
 
-		sessionId, sErr := GetUUIDPathValue(r, "session_id")
+		sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
 		if sErr != nil {
-			SError(w, sErr)
+			utils.SError(w, sErr)
 			return
 		}
 
@@ -186,7 +187,7 @@ func (h *MiddlewareHandler) CheckSessionMembershipOnly(next http.Handler) http.H
 			UserID: claims.UserId,
 		})
 		if err != nil {
-			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
 
@@ -199,15 +200,15 @@ func (h *MiddlewareHandler) CheckSessionMembership(next http.Handler) http.Handl
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		raw := ctx.Value(UserContextKey)
-		claims, ok := raw.(*Claims)
+		claims, ok := raw.(*utils.Claims)
 		if !ok || claims == nil {
-			Error(w, http.StatusUnauthorized, ErrGetUserDataFail, "failed to get user claims from context")
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
 			return
 		}
 
-		sessionId, sErr := GetUUIDPathValue(r, "session_id")
+		sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
 		if sErr != nil {
-			SError(w, sErr)
+			utils.SError(w, sErr)
 			return
 		}
 
@@ -216,7 +217,7 @@ func (h *MiddlewareHandler) CheckSessionMembership(next http.Handler) http.Handl
 			OwnerID: claims.UserId,
 		})
 		if err != nil {
-			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
 
@@ -226,15 +227,15 @@ func (h *MiddlewareHandler) CheckSessionMembership(next http.Handler) http.Handl
 
 func (h *MiddlewareHandler) CheckSessionActive(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sessionId, sErr := GetUUIDPathValue(r, "session_id")
+		sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
 		if sErr != nil {
-			SError(w, sErr)
+			utils.SError(w, sErr)
 			return
 		}
 
 		_, err := h.cfg.Queries.CheckSessionActive(r.Context(), sessionId)
 		if err != nil {
-			Error(w, http.StatusInternalServerError, ErrDbtxFail, err.Error())
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
 

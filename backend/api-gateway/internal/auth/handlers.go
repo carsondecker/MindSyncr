@@ -3,25 +3,26 @@ package auth
 import (
 	"net/http"
 
-	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/carsondecker/MindSyncr/internal/sutils"
+	"github.com/carsondecker/MindSyncr/utils"
 )
 
 type AuthHandler struct {
-	cfg *utils.Config
+	cfg *sutils.Config
 }
 
-func NewAuthHandler(cfg *utils.Config) *AuthHandler {
+func NewAuthHandler(cfg *sutils.Config) *AuthHandler {
 	return &AuthHandler{
 		cfg,
 	}
 }
 
-func (h *AuthHandler) GetConfig() *utils.Config {
+func (h *AuthHandler) GetConfig() *sutils.Config {
 	return h.cfg
 }
 
 func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithBody(h, w, r,
+	sutils.BaseHandlerFuncWithBody(h, w, r,
 		http.StatusCreated,
 		func(data RegisterRequest) (UserWithRefresh, *utils.ServiceError) {
 			res, jwtToken, refreshToken, sErr := h.registerService(r.Context(), data.Email, data.Username, data.Password)
@@ -56,7 +57,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithBody(h, w, r,
+	sutils.BaseHandlerFuncWithBody(h, w, r,
 		http.StatusOK,
 		func(data LoginRequest) (UserWithRefresh, *utils.ServiceError) {
 			res, jwtToken, refreshToken, sErr := h.loginService(r.Context(), data.Email, data.Password)
@@ -90,7 +91,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFunc(h, w, r,
+	sutils.BaseHandlerFunc(h, w, r,
 		http.StatusCreated,
 		func() (RefreshTokenResponse, *utils.ServiceError) {
 			refreshToken, sErr := getRefreshToken(r)
@@ -129,7 +130,7 @@ func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
 			refreshToken, sErr := getRefreshToken(r)
@@ -164,7 +165,7 @@ func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (User, *utils.ServiceError) {
 			res, sErr := h.getUserService(r.Context(), claims.UserId)

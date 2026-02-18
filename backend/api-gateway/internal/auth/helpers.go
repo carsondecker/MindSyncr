@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
-	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/carsondecker/MindSyncr/utils"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )

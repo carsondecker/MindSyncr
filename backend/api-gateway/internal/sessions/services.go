@@ -5,9 +5,10 @@ import (
 	"net/http"
 
 	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
-	"github.com/carsondecker/MindSyncr/internal/utils"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+
+	"github.com/carsondecker/MindSyncr/utils"
 )
 
 func (h *SessionsHandler) createSessionService(ctx context.Context, userId, roomId uuid.UUID, name string) (Session, *utils.ServiceError) {

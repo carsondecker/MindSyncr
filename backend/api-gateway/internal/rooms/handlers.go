@@ -3,25 +3,26 @@ package rooms
 import (
 	"net/http"
 
-	"github.com/carsondecker/MindSyncr/internal/utils"
+	"github.com/carsondecker/MindSyncr/internal/sutils"
+	"github.com/carsondecker/MindSyncr/utils"
 )
 
 type RoomsHandler struct {
-	cfg *utils.Config
+	cfg *sutils.Config
 }
 
-func NewRoomsHandler(cfg *utils.Config) *RoomsHandler {
+func NewRoomsHandler(cfg *sutils.Config) *RoomsHandler {
 	return &RoomsHandler{
 		cfg,
 	}
 }
 
-func (h RoomsHandler) GetConfig() *utils.Config {
+func (h RoomsHandler) GetConfig() *sutils.Config {
 	return h.cfg
 }
 
 func (h *RoomsHandler) HandleCreateRoom(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
+	sutils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
 		http.StatusCreated,
 		func(data CreateRoomRequest, claims *utils.Claims) (Room, *utils.ServiceError) {
 			return h.createRoomService(r.Context(), claims.UserId, data.Name, data.Description)
@@ -43,7 +44,7 @@ func (h *RoomsHandler) HandleGetRooms(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RoomsHandler) HandleGetOwnedRooms(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) ([]Room, *utils.ServiceError) {
 			return h.getOwnedRoomsService(r.Context(), claims.UserId)
@@ -52,7 +53,7 @@ func (h *RoomsHandler) HandleGetOwnedRooms(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *RoomsHandler) HandleGetJoinedRooms(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) ([]Room, *utils.ServiceError) {
 			return h.getJoinedRoomsService(r.Context(), claims.UserId)
@@ -61,7 +62,7 @@ func (h *RoomsHandler) HandleGetJoinedRooms(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *RoomsHandler) HandleGetRoom(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFunc(h, w, r,
+	sutils.BaseHandlerFunc(h, w, r,
 		http.StatusOK,
 		func() (Room, *utils.ServiceError) {
 			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
@@ -80,7 +81,7 @@ func (h *RoomsHandler) HandleGetRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RoomsHandler) HandleUpdateRoom(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
+	sutils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
 		http.StatusOK,
 		func(data PatchRoomRequest, claims *utils.Claims) (Room, *utils.ServiceError) {
 			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
@@ -99,7 +100,7 @@ func (h *RoomsHandler) HandleUpdateRoom(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *RoomsHandler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
 			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
@@ -119,7 +120,7 @@ func (h *RoomsHandler) HandleDeleteRoom(w http.ResponseWriter, r *http.Request) 
 
 // TODO: stop users from joining a room they own
 func (h *RoomsHandler) HandleJoinRoom(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
 			joinCode, sErr := utils.GetPathValue(r, "join_code")
@@ -139,7 +140,7 @@ func (h *RoomsHandler) HandleJoinRoom(w http.ResponseWriter, r *http.Request) {
 
 // TODO: stop users from leaving a room they are not a member of
 func (h *RoomsHandler) HandleLeaveRoom(w http.ResponseWriter, r *http.Request) {
-	utils.BaseHandlerFuncWithClaims(h, w, r,
+	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
 			roomId, sErr := utils.GetUUIDPathValue(r, "room_id")
