@@ -23,8 +23,8 @@ export async function createQuestionApi(apiFetch: ApiFetch, session_id: string, 
     })
 }
 
-export async function deleteQuestionApi(apiFetch: ApiFetch, question_id: string): Promise<void> {
-    await apiFetch(`/questions/${question_id}`, {
+export async function deleteQuestionApi(apiFetch: ApiFetch, session_id: string, question_id: string): Promise<void> {
+    await apiFetch(`/sessions/${session_id}/questions/${question_id}`, {
         method: "DELETE",
     })
 }

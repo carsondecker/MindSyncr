@@ -44,6 +44,11 @@ export function eventReducer(prevState: EventState, action: Event) {
                     console.log("questions.created")
                     const question = action.data as Question
                     return mergeQuestions(prevState, [question])
+
+                case "deleted":
+                    console.log("questions.deleted")
+                    const questionId = action.entity_id
+                    delete prevState.questions.current[questionId]
             }
             break
     }

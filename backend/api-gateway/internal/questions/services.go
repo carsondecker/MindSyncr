@@ -69,10 +69,11 @@ func (h *QuestionsHandler) getQuestionsService(ctx context.Context, sessionId uu
 	return questions, nil
 }
 
-func (h *QuestionsHandler) deleteQuestionService(ctx context.Context, userId, questionId uuid.UUID) *utils.ServiceError {
+func (h *QuestionsHandler) deleteQuestionService(ctx context.Context, sessionId, userId, questionId uuid.UUID) *utils.ServiceError {
 	err := h.cfg.Queries.DeleteQuestion(ctx, sqlc.DeleteQuestionParams{
-		UserID: userId,
-		ID:     questionId,
+		UserID:    userId,
+		ID:        questionId,
+		SessionID: sessionId,
 	})
 	if err != nil {
 		return &utils.ServiceError{
@@ -80,6 +81,11 @@ func (h *QuestionsHandler) deleteQuestionService(ctx context.Context, userId, qu
 			Code:       utils.ErrDbtxFail,
 			Message:    err.Error(),
 		}
+	}
+
+	sErr := h.cfg.RedisClient.Broadcast("questions", "deleted", sessionId, userId, questionId, Question{})
+	if sErr != nil {
+		return sErr
 	}
 
 	return nil

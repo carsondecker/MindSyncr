@@ -15,15 +15,17 @@ const deleteQuestion = `-- name: DeleteQuestion :exec
 DELETE FROM questions
 WHERE user_id = $1
     AND id = $2
+    AND session_id = $3
 `
 
 type DeleteQuestionParams struct {
-	UserID uuid.UUID `json:"user_id"`
-	ID     uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	ID        uuid.UUID `json:"id"`
+	SessionID uuid.UUID `json:"session_id"`
 }
 
 func (q *Queries) DeleteQuestion(ctx context.Context, arg DeleteQuestionParams) error {
-	_, err := q.db.ExecContext(ctx, deleteQuestion, arg.UserID, arg.ID)
+	_, err := q.db.ExecContext(ctx, deleteQuestion, arg.UserID, arg.ID, arg.SessionID)
 	return err
 }
 

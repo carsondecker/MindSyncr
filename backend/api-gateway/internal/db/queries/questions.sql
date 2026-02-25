@@ -15,4 +15,5 @@ WHERE session_id = $1;
 -- name: DeleteQuestion :exec
 DELETE FROM questions
 WHERE user_id = $1
-    AND id = $2;
+    AND id = $2
+    AND session_id = $3;

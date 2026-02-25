@@ -39,12 +39,12 @@ func (h *QuestionsHandler) HandleGetQuestions(w http.ResponseWriter, r *http.Req
 	sutils.BaseHandlerFunc(h, w, r,
 		http.StatusOK,
 		func() ([]Question, *utils.ServiceError) {
-			session_id, sErr := utils.GetUUIDPathValue(r, "session_id")
+			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
 			if sErr != nil {
 				return nil, sErr
 			}
 
-			res, sErr := h.getQuestionsService(r.Context(), session_id)
+			res, sErr := h.getQuestionsService(r.Context(), sessionId)
 			if sErr != nil {
 				return nil, sErr
 			}
@@ -58,12 +58,17 @@ func (h *QuestionsHandler) HandleDeleteQuestion(w http.ResponseWriter, r *http.R
 	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
+			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
+			if sErr != nil {
+				return struct{}{}, sErr
+			}
+
 			questionId, sErr := utils.GetUUIDPathValue(r, "question_id")
 			if sErr != nil {
 				return struct{}{}, sErr
 			}
 
-			sErr = h.deleteQuestionService(r.Context(), claims.UserId, questionId)
+			sErr = h.deleteQuestionService(r.Context(), sessionId, claims.UserId, questionId)
 			if sErr != nil {
 				return struct{}{}, sErr
 			}

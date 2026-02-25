@@ -39,7 +39,7 @@ export function useApi() {
 
   const getQuestions = useCallback((session_id: string) => getQuestionsApi(apiFetch, session_id), [apiFetch])
   const createQuestion = useCallback((session_id: string, input: CreateQuestionRequest) => createQuestionApi(apiFetch, session_id, input), [apiFetch])
-  const deleteQuestion = useCallback((question_id: string) => deleteQuestionApi(apiFetch, question_id), [apiFetch])
+  const deleteQuestion = useCallback((session_id: string, question_id: string) => deleteQuestionApi(apiFetch, session_id, question_id), [apiFetch])
 
   return {
     apiFetch,

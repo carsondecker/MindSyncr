@@ -27,7 +27,7 @@ export default function useQuestionMutations(session_id?: string) {
     // TODO: add optimistic updates
     const deleteQuestionMutation = useMutation({
             mutationKey: ['deleteQuestion'],
-            mutationFn: (question_id: string) => deleteQuestion(question_id),
+            mutationFn: (question_id: string) => deleteQuestion(sessionId!, question_id),
             onSettled: (data, err, variables, onMutateResult, context) => {
                 context.client.invalidateQueries({ queryKey: ['questions', sessionId] })
             }
