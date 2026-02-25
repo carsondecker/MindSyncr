@@ -43,8 +43,8 @@ services:
 
   backend:
     build:
-      context: ./backend/api-gateway
-      dockerfile: Dockerfile
+      context: ./backend/
+      dockerfile: ./api-gateway/Dockerfile
       args:
         ENV: ${ENV:-development}
     depends_on:
@@ -76,8 +76,8 @@ services:
 
   ws:
     build:
-      context: ./backend/ws-service
-      dockerfile: Dockerfile
+      context: ./backend/
+      dockerfile: ./ws-service/Dockerfile
       args:
         ENV: ${ENV:-development}
     depends_on:
