@@ -45,7 +45,7 @@ func (h *RepliesHandler) HandleCreateReply(w http.ResponseWriter, r *http.Reques
 	)
 }
 
-func (h *RepliesHandler) HandleGetQuestions(w http.ResponseWriter, r *http.Request) {
+func (h *RepliesHandler) HandleGetReplies(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFunc(h, w, r,
 		http.StatusOK,
 		func() ([]Reply, *utils.ServiceError) {
@@ -64,7 +64,7 @@ func (h *RepliesHandler) HandleGetQuestions(w http.ResponseWriter, r *http.Reque
 	)
 }
 
-func (h *RepliesHandler) HandleDeleteQuestion(w http.ResponseWriter, r *http.Request) {
+func (h *RepliesHandler) HandleDeleteReply(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
@@ -88,7 +88,7 @@ func (h *RepliesHandler) HandleDeleteQuestion(w http.ResponseWriter, r *http.Req
 	)
 }
 
-func (h *RepliesHandler) HandleUpdateQuestion(w http.ResponseWriter, r *http.Request) {
+func (h *RepliesHandler) HandleUpdateReply(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
 		http.StatusOK,
 		func(data PatchReplyRequest, claims *utils.Claims) (Reply, *utils.ServiceError) {

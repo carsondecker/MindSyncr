@@ -7,6 +7,7 @@ import (
 	comprehensionscores "github.com/carsondecker/MindSyncr/internal/comprehension_scores"
 	questionlikes "github.com/carsondecker/MindSyncr/internal/question_likes"
 	"github.com/carsondecker/MindSyncr/internal/questions"
+	"github.com/carsondecker/MindSyncr/internal/replies"
 	"github.com/carsondecker/MindSyncr/internal/rooms"
 	"github.com/carsondecker/MindSyncr/internal/sessions"
 	"github.com/carsondecker/MindSyncr/internal/sutils"
@@ -142,9 +143,7 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 
 	sessionsRouter.Handle("GET /{session_id}/question_likes", sutils.AuthMiddleware(
 		middlewareHandler.CheckSessionMembership(
-			middlewareHandler.CheckQuestionBelongsToSession(
-				http.HandlerFunc(questionLikesHandler.HandleGetQuestionLikes),
-			),
+			http.HandlerFunc(questionLikesHandler.HandleGetQuestionLikes),
 		),
 	))
 
@@ -154,6 +153,48 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 				middlewareHandler.CheckQuestionBelongsToSession(
 					middlewareHandler.CheckCanDeleteQuestionLike(
 						http.HandlerFunc(questionLikesHandler.HandleDeleteQuestionLike),
+					),
+				),
+			),
+		),
+	))
+
+	repliesHandler := replies.NewRepliesHandler(cfg)
+
+	sessionsRouter.Handle("POST /{session_id}/questions/{question_id}/replies", sutils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembershipOnly(
+			middlewareHandler.CheckSessionActive(
+				middlewareHandler.CheckQuestionBelongsToSession(
+					http.HandlerFunc(repliesHandler.HandleCreateReply),
+				),
+			),
+		),
+	))
+
+	sessionsRouter.Handle("GET /{session_id}/replies", sutils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembership(
+			http.HandlerFunc(repliesHandler.HandleGetReplies),
+		),
+	))
+
+	sessionsRouter.Handle("DELETE /{session_id}/replies/{reply_id}", sutils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembershipOnly(
+			middlewareHandler.CheckSessionActive(
+				middlewareHandler.CheckQuestionBelongsToSession(
+					middlewareHandler.CheckCanDeleteReply(
+						http.HandlerFunc(repliesHandler.HandleDeleteReply),
+					),
+				),
+			),
+		),
+	))
+
+	sessionsRouter.Handle("PATCH /{session_id}/replies/{reply_id}", sutils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembershipOnly(
+			middlewareHandler.CheckSessionActive(
+				middlewareHandler.CheckQuestionBelongsToSession(
+					middlewareHandler.CheckOwnsReply(
+						http.HandlerFunc(repliesHandler.HandleDeleteReply),
 					),
 				),
 			),

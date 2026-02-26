@@ -109,4 +109,38 @@ SELECT EXISTS (
     SELECT 1
     FROM question_likes
     WHERE user_id = $1
+        AND question_id = $2
+);
+
+-- name: CheckReplyBelongsToSession :one
+SELECT EXISTS (
+    SELECT 1
+    FROM replies r
+    JOIN questions q
+        ON r.question_id = q.id
+    WHERE r.id = $1
+        AND q.session_id = $2
+);
+
+-- name: CheckOwnsReply :one
+SELECT EXISTS (
+    SELECT 1
+    FROM replies
+    WHERE id = $1
+        AND user_id = $2
+);
+
+-- name: CheckCanDeleteReply :one
+SELECT EXISTS (
+    SELECT 1
+    FROM replies r
+    JOIN questions q
+        ON r.question_id = q.id
+    JOIN sessions s
+        ON q.session_id = s.id
+    WHERE r.id = $1
+        AND (
+            q.user_id = $2 OR
+            s.owner_id = $2
+        )
 );

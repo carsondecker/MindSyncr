@@ -42,11 +42,45 @@ SELECT EXISTS (
     SELECT 1
     FROM question_likes
     WHERE user_id = $1
+        AND question_id = $2
 )
 `
 
-func (q *Queries) CheckCanDeleteQuestionLike(ctx context.Context, userID uuid.UUID) (bool, error) {
-	row := q.db.QueryRowContext(ctx, checkCanDeleteQuestionLike, userID)
+type CheckCanDeleteQuestionLikeParams struct {
+	UserID     uuid.UUID `json:"user_id"`
+	QuestionID uuid.UUID `json:"question_id"`
+}
+
+func (q *Queries) CheckCanDeleteQuestionLike(ctx context.Context, arg CheckCanDeleteQuestionLikeParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkCanDeleteQuestionLike, arg.UserID, arg.QuestionID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const checkCanDeleteReply = `-- name: CheckCanDeleteReply :one
+SELECT EXISTS (
+    SELECT 1
+    FROM replies r
+    JOIN questions q
+        ON r.question_id = q.id
+    JOIN sessions s
+        ON q.session_id = s.id
+    WHERE r.id = $1
+        AND (
+            q.user_id = $2 OR
+            s.owner_id = $2
+        )
+)
+`
+
+type CheckCanDeleteReplyParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) CheckCanDeleteReply(ctx context.Context, arg CheckCanDeleteReplyParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkCanDeleteReply, arg.ID, arg.UserID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -73,6 +107,27 @@ func (q *Queries) CheckOwnsQuestion(ctx context.Context, arg CheckOwnsQuestionPa
 	return exists, err
 }
 
+const checkOwnsReply = `-- name: CheckOwnsReply :one
+SELECT EXISTS (
+    SELECT 1
+    FROM replies
+    WHERE id = $1
+        AND user_id = $2
+)
+`
+
+type CheckOwnsReplyParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) CheckOwnsReply(ctx context.Context, arg CheckOwnsReplyParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkOwnsReply, arg.ID, arg.UserID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const checkQuestionBelongsToSession = `-- name: CheckQuestionBelongsToSession :one
 SELECT EXISTS (
     SELECT 1
@@ -89,6 +144,29 @@ type CheckQuestionBelongsToSessionParams struct {
 
 func (q *Queries) CheckQuestionBelongsToSession(ctx context.Context, arg CheckQuestionBelongsToSessionParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkQuestionBelongsToSession, arg.ID, arg.SessionID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const checkReplyBelongsToSession = `-- name: CheckReplyBelongsToSession :one
+SELECT EXISTS (
+    SELECT 1
+    FROM replies r
+    JOIN questions q
+        ON r.question_id = q.id
+    WHERE r.id = $1
+        AND q.session_id = $2
+)
+`
+
+type CheckReplyBelongsToSessionParams struct {
+	ID        uuid.UUID `json:"id"`
+	SessionID uuid.UUID `json:"session_id"`
+}
+
+func (q *Queries) CheckReplyBelongsToSession(ctx context.Context, arg CheckReplyBelongsToSessionParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkReplyBelongsToSession, arg.ID, arg.SessionID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err

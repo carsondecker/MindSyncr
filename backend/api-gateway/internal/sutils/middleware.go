@@ -339,7 +339,16 @@ func (h *MiddlewareHandler) CheckCanDeleteQuestionLike(next http.Handler) http.H
 			return
 		}
 
-		ok, err := h.cfg.Queries.CheckCanDeleteQuestionLike(r.Context(), claims.UserId)
+		questionId, sErr := utils.GetUUIDPathValue(r, "question_id")
+		if sErr != nil {
+			utils.SError(w, sErr)
+			return
+		}
+
+		ok, err := h.cfg.Queries.CheckCanDeleteQuestionLike(r.Context(), sqlc.CheckCanDeleteQuestionLikeParams{
+			UserID:     claims.UserId,
+			QuestionID: questionId,
+		})
 		if err != nil {
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
@@ -412,6 +421,103 @@ func (h *MiddlewareHandler) CheckDoesNotOwnQuestion(next http.Handler) http.Hand
 		}
 		if ok {
 			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "the owner of this question cannot perform this action")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *MiddlewareHandler) CheckReplyBelongsToSession(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
+		if sErr != nil {
+			utils.SError(w, sErr)
+			return
+		}
+
+		replyId, sErr := utils.GetUUIDPathValue(r, "reply_id")
+		if sErr != nil {
+			utils.SError(w, sErr)
+			return
+		}
+
+		ok, err := h.cfg.Queries.CheckReplyBelongsToSession(r.Context(), sqlc.CheckReplyBelongsToSessionParams{
+			ID:        replyId,
+			SessionID: sessionId,
+		})
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "this reply does not belong to the provided session")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *MiddlewareHandler) CheckOwnsReply(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		raw := ctx.Value(UserContextKey)
+		claims, ok := raw.(*utils.Claims)
+		if !ok || claims == nil {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
+			return
+		}
+
+		replyId, sErr := utils.GetUUIDPathValue(r, "reply_id")
+		if sErr != nil {
+			utils.SError(w, sErr)
+			return
+		}
+
+		ok, err := h.cfg.Queries.CheckOwnsReply(r.Context(), sqlc.CheckOwnsReplyParams{
+			ID:     replyId,
+			UserID: claims.UserId,
+		})
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must be the owner of this reply to perform this action")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *MiddlewareHandler) CheckCanDeleteReply(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		raw := ctx.Value(UserContextKey)
+		claims, ok := raw.(*utils.Claims)
+		if !ok || claims == nil {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
+			return
+		}
+
+		replyId, sErr := utils.GetUUIDPathValue(r, "reply_id")
+		if sErr != nil {
+			utils.SError(w, sErr)
+			return
+		}
+
+		ok, err := h.cfg.Queries.CheckCanDeleteReply(r.Context(), sqlc.CheckCanDeleteReplyParams{
+			ID:     replyId,
+			UserID: claims.UserId,
+		})
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must be the owner of this session or the writer of this reply to delete it")
 			return
 		}
 
