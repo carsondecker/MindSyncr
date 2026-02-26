@@ -105,7 +105,7 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	))
 
 	sessionsRouter.Handle("DELETE /{session_id}/questions/{question_id}", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(
+		middlewareHandler.CheckSessionMembership(
 			middlewareHandler.CheckSessionActive(
 				middlewareHandler.CheckQuestionBelongsToSession(
 					middlewareHandler.CheckCanDeleteQuestion(
@@ -117,12 +117,10 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	))
 
 	sessionsRouter.Handle("PATCH /{session_id}/questions/{question_id}", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(
-			middlewareHandler.CheckSessionActive(
-				middlewareHandler.CheckQuestionBelongsToSession(
-					middlewareHandler.CheckOwnsQuestion(
-						http.HandlerFunc(questionsHandler.HandleUpdateQuestion),
-					),
+		middlewareHandler.CheckSessionActive(
+			middlewareHandler.CheckQuestionBelongsToSession(
+				middlewareHandler.CheckOwnsQuestion(
+					http.HandlerFunc(questionsHandler.HandleUpdateQuestion),
 				),
 			),
 		),
@@ -134,7 +132,7 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 		middlewareHandler.CheckSessionMembershipOnly(
 			middlewareHandler.CheckSessionActive(
 				middlewareHandler.CheckQuestionBelongsToSession(
-					middlewareHandler.CheckCanDeleteQuestion(
+					middlewareHandler.CheckDoesNotOwnQuestion(
 						http.HandlerFunc(questionLikesHandler.HandleCreateQuestionLike),
 					),
 				),
@@ -143,11 +141,9 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	))
 
 	sessionsRouter.Handle("GET /{session_id}/question_likes", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(
-			middlewareHandler.CheckSessionActive(
-				middlewareHandler.CheckQuestionBelongsToSession(
-					http.HandlerFunc(questionLikesHandler.HandleGetQuestionLikes),
-				),
+		middlewareHandler.CheckSessionMembership(
+			middlewareHandler.CheckQuestionBelongsToSession(
+				http.HandlerFunc(questionLikesHandler.HandleGetQuestionLikes),
 			),
 		),
 	))

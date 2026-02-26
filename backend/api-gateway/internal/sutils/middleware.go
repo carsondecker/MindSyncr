@@ -386,7 +386,7 @@ func (h *MiddlewareHandler) CheckOwnsQuestion(next http.Handler) http.Handler {
 	})
 }
 
-func (h *MiddlewareHandler) CheckDoesNotQuestion(next http.Handler) http.Handler {
+func (h *MiddlewareHandler) CheckDoesNotOwnQuestion(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		raw := ctx.Value(UserContextKey)
