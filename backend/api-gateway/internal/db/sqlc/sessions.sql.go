@@ -14,16 +14,17 @@ import (
 )
 
 const checkRoomMembershipBySessionId = `-- name: CheckRoomMembershipBySessionId :one
-SELECT 1
-FROM rooms r
-LEFT JOIN room_memberships rm
-    ON r.id = rm.room_id
-    AND rm.user_id = $2
-JOIN sessions s
-    ON r.id = s.room_id
-WHERE s.id = $1
-    AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
-LIMIT 1
+SELECT EXISTS (
+    SELECT 1
+    FROM rooms r
+    LEFT JOIN room_memberships rm
+        ON r.id = rm.room_id
+        AND rm.user_id = $2
+    JOIN sessions s
+        ON r.id = s.room_id
+    WHERE s.id = $1
+        AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
+)
 `
 
 type CheckRoomMembershipBySessionIdParams struct {
@@ -31,21 +32,22 @@ type CheckRoomMembershipBySessionIdParams struct {
 	UserID uuid.UUID `json:"user_id"`
 }
 
-func (q *Queries) CheckRoomMembershipBySessionId(ctx context.Context, arg CheckRoomMembershipBySessionIdParams) (int32, error) {
+func (q *Queries) CheckRoomMembershipBySessionId(ctx context.Context, arg CheckRoomMembershipBySessionIdParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkRoomMembershipBySessionId, arg.ID, arg.UserID)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const checkRoomOwnershipBySessionId = `-- name: CheckRoomOwnershipBySessionId :one
-SELECT 1
-FROM rooms r
-JOIN sessions s
-    ON r.id = s.room_id
-WHERE s.id = $1
-    AND r.owner_id = $2
-LIMIT 1
+SELECT EXISTS (
+    SELECT 1
+    FROM rooms r
+    JOIN sessions s
+        ON r.id = s.room_id
+    WHERE s.id = $1
+        AND r.owner_id = $2
+)
 `
 
 type CheckRoomOwnershipBySessionIdParams struct {
@@ -53,28 +55,31 @@ type CheckRoomOwnershipBySessionIdParams struct {
 	OwnerID uuid.UUID `json:"owner_id"`
 }
 
-func (q *Queries) CheckRoomOwnershipBySessionId(ctx context.Context, arg CheckRoomOwnershipBySessionIdParams) (int32, error) {
+func (q *Queries) CheckRoomOwnershipBySessionId(ctx context.Context, arg CheckRoomOwnershipBySessionIdParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkRoomOwnershipBySessionId, arg.ID, arg.OwnerID)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const checkSessionActive = `-- name: CheckSessionActive :one
-SELECT 1
-FROM sessions
-WHERE id = $1
-    AND is_active = TRUE
+SELECT EXISTS (
+    SELECT 1
+    FROM sessions
+    WHERE id = $1
+        AND is_active = TRUE
+)
 `
 
-func (q *Queries) CheckSessionActive(ctx context.Context, id uuid.UUID) (int32, error) {
+func (q *Queries) CheckSessionActive(ctx context.Context, id uuid.UUID) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkSessionActive, id)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const checkSessionMembership = `-- name: CheckSessionMembership :one
+SELECT EXISTS (
 SELECT 1
 FROM sessions s
 WHERE s.id = $1
@@ -87,7 +92,7 @@ WHERE s.id = $1
             AND sm.user_id = $2
       )
   )
-LIMIT 1
+)
 `
 
 type CheckSessionMembershipParams struct {
@@ -95,22 +100,23 @@ type CheckSessionMembershipParams struct {
 	OwnerID uuid.UUID `json:"owner_id"`
 }
 
-func (q *Queries) CheckSessionMembership(ctx context.Context, arg CheckSessionMembershipParams) (int32, error) {
+func (q *Queries) CheckSessionMembership(ctx context.Context, arg CheckSessionMembershipParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkSessionMembership, arg.ID, arg.OwnerID)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const checkSessionMembershipOnly = `-- name: CheckSessionMembershipOnly :one
-SELECT 1
-FROM sessions s
-LEFT JOIN session_memberships sm
-    ON s.id = sm.session_id
-    AND sm.user_id = $2
-WHERE s.id = $1
-    AND sm.user_id IS NOT NULL
-LIMIT 1
+SELECT EXISTS (
+    SELECT 1
+    FROM sessions s
+    LEFT JOIN session_memberships sm
+        ON s.id = sm.session_id
+        AND sm.user_id = $2
+    WHERE s.id = $1
+        AND sm.user_id IS NOT NULL
+)
 `
 
 type CheckSessionMembershipOnlyParams struct {
@@ -118,11 +124,11 @@ type CheckSessionMembershipOnlyParams struct {
 	UserID uuid.UUID `json:"user_id"`
 }
 
-func (q *Queries) CheckSessionMembershipOnly(ctx context.Context, arg CheckSessionMembershipOnlyParams) (int32, error) {
+func (q *Queries) CheckSessionMembershipOnly(ctx context.Context, arg CheckSessionMembershipOnlyParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkSessionMembershipOnly, arg.ID, arg.UserID)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const deleteSession = `-- name: DeleteSession :exec

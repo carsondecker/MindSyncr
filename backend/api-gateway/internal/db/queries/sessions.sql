@@ -25,37 +25,41 @@ LEFT JOIN session_memberships sm
 WHERE id = $1;
 
 -- name: CheckRoomMembershipBySessionId :one
-SELECT 1
-FROM rooms r
-LEFT JOIN room_memberships rm
-    ON r.id = rm.room_id
-    AND rm.user_id = $2
-JOIN sessions s
-    ON r.id = s.room_id
-WHERE s.id = $1
-    AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
-LIMIT 1;
+SELECT EXISTS (
+    SELECT 1
+    FROM rooms r
+    LEFT JOIN room_memberships rm
+        ON r.id = rm.room_id
+        AND rm.user_id = $2
+    JOIN sessions s
+        ON r.id = s.room_id
+    WHERE s.id = $1
+        AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
+);
 
 -- name: CheckRoomOwnershipBySessionId :one
-SELECT 1
-FROM rooms r
-JOIN sessions s
-    ON r.id = s.room_id
-WHERE s.id = $1
-    AND r.owner_id = $2
-LIMIT 1;
+SELECT EXISTS (
+    SELECT 1
+    FROM rooms r
+    JOIN sessions s
+        ON r.id = s.room_id
+    WHERE s.id = $1
+        AND r.owner_id = $2
+);
 
 -- name: CheckSessionMembershipOnly :one
-SELECT 1
-FROM sessions s
-LEFT JOIN session_memberships sm
-    ON s.id = sm.session_id
-    AND sm.user_id = $2
-WHERE s.id = $1
-    AND sm.user_id IS NOT NULL
-LIMIT 1;
+SELECT EXISTS (
+    SELECT 1
+    FROM sessions s
+    LEFT JOIN session_memberships sm
+        ON s.id = sm.session_id
+        AND sm.user_id = $2
+    WHERE s.id = $1
+        AND sm.user_id IS NOT NULL
+);
 
 -- name: CheckSessionMembership :one
+SELECT EXISTS (
 SELECT 1
 FROM sessions s
 WHERE s.id = $1
@@ -68,13 +72,15 @@ WHERE s.id = $1
             AND sm.user_id = $2
       )
   )
-LIMIT 1;
+);
 
 -- name: CheckSessionActive :one
-SELECT 1
-FROM sessions
-WHERE id = $1
-    AND is_active = TRUE;
+SELECT EXISTS (
+    SELECT 1
+    FROM sessions
+    WHERE id = $1
+        AND is_active = TRUE
+);
 
 -- name: GetSessionOwnerById :one
 SELECT owner_id

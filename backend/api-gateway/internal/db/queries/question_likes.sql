@@ -23,6 +23,8 @@ WHERE ql.question_id = q.id
 RETURNING ql.id;
 
 -- name: CheckCanDeleteQuestionLike :one
-SELECT 1
-FROM question_likes
-WHERE user_id = $1;
+SELECT EXISTS (
+    SELECT 1
+    FROM question_likes
+    WHERE user_id = $1
+);

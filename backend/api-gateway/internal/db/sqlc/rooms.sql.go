@@ -42,14 +42,15 @@ func (q *Queries) CheckNewJoinCode(ctx context.Context, joinCode string) ([]uuid
 }
 
 const checkRoomMembershipByRoomId = `-- name: CheckRoomMembershipByRoomId :one
-SELECT 1
-FROM rooms r
-LEFT JOIN room_memberships rm
-    ON rm.room_id = r.id
-    AND rm.user_id = $2
-WHERE r.id = $1
-    AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
-LIMIT 1
+SELECT EXISTS (
+    SELECT 1
+    FROM rooms r
+    LEFT JOIN room_memberships rm
+        ON rm.room_id = r.id
+        AND rm.user_id = $2
+    WHERE r.id = $1
+        AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
+)
 `
 
 type CheckRoomMembershipByRoomIdParams struct {
@@ -57,19 +58,20 @@ type CheckRoomMembershipByRoomIdParams struct {
 	UserID uuid.UUID `json:"user_id"`
 }
 
-func (q *Queries) CheckRoomMembershipByRoomId(ctx context.Context, arg CheckRoomMembershipByRoomIdParams) (int32, error) {
+func (q *Queries) CheckRoomMembershipByRoomId(ctx context.Context, arg CheckRoomMembershipByRoomIdParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkRoomMembershipByRoomId, arg.ID, arg.UserID)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const checkRoomOwnershipByRoomId = `-- name: CheckRoomOwnershipByRoomId :one
-SELECT 1
-FROM rooms
-WHERE id = $1
-    AND owner_id = $2
-LIMIT 1
+SELECT EXISTS (
+    SELECT 1
+    FROM rooms
+    WHERE id = $1
+        AND owner_id = $2
+)
 `
 
 type CheckRoomOwnershipByRoomIdParams struct {
@@ -77,11 +79,11 @@ type CheckRoomOwnershipByRoomIdParams struct {
 	OwnerID uuid.UUID `json:"owner_id"`
 }
 
-func (q *Queries) CheckRoomOwnershipByRoomId(ctx context.Context, arg CheckRoomOwnershipByRoomIdParams) (int32, error) {
+func (q *Queries) CheckRoomOwnershipByRoomId(ctx context.Context, arg CheckRoomOwnershipByRoomIdParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkRoomOwnershipByRoomId, arg.ID, arg.OwnerID)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const deleteRoom = `-- name: DeleteRoom :exec

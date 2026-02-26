@@ -45,7 +45,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// TODO: update error handling to give a different error if no rows are returned
 func (h *MiddlewareHandler) CheckRoomMembershipByRoomId(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -62,7 +61,7 @@ func (h *MiddlewareHandler) CheckRoomMembershipByRoomId(next http.Handler) http.
 			return
 		}
 
-		_, err := h.cfg.Queries.CheckRoomMembershipByRoomId(ctx, sqlc.CheckRoomMembershipByRoomIdParams{
+		ok, err := h.cfg.Queries.CheckRoomMembershipByRoomId(ctx, sqlc.CheckRoomMembershipByRoomIdParams{
 			ID:     roomId,
 			UserID: claims.UserId,
 		})
@@ -70,12 +69,15 @@ func (h *MiddlewareHandler) CheckRoomMembershipByRoomId(next http.Handler) http.
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must be a member of this room to perform this action")
+			return
+		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-// TODO: update error handling to give a different error if no rows are returned
 func (h *MiddlewareHandler) CheckRoomOwnershipByRoomId(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -92,7 +94,7 @@ func (h *MiddlewareHandler) CheckRoomOwnershipByRoomId(next http.Handler) http.H
 			return
 		}
 
-		_, err := h.cfg.Queries.CheckRoomOwnershipByRoomId(ctx, sqlc.CheckRoomOwnershipByRoomIdParams{
+		ok, err := h.cfg.Queries.CheckRoomOwnershipByRoomId(ctx, sqlc.CheckRoomOwnershipByRoomIdParams{
 			ID:      roomId,
 			OwnerID: claims.UserId,
 		})
@@ -100,12 +102,15 @@ func (h *MiddlewareHandler) CheckRoomOwnershipByRoomId(next http.Handler) http.H
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must be the owner of this room to perform this action")
+			return
+		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-// TODO: update error handling to give a different error if no rows are returned
 func (h *MiddlewareHandler) CheckRoomMembershipBySessionId(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -122,7 +127,7 @@ func (h *MiddlewareHandler) CheckRoomMembershipBySessionId(next http.Handler) ht
 			return
 		}
 
-		_, err := h.cfg.Queries.CheckRoomMembershipBySessionId(ctx, sqlc.CheckRoomMembershipBySessionIdParams{
+		ok, err := h.cfg.Queries.CheckRoomMembershipBySessionId(ctx, sqlc.CheckRoomMembershipBySessionIdParams{
 			ID:     sessionId,
 			UserID: claims.UserId,
 		})
@@ -130,12 +135,15 @@ func (h *MiddlewareHandler) CheckRoomMembershipBySessionId(next http.Handler) ht
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must be the owner of this session's room to perform this action")
+			return
+		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-// TODO: update error handling to give a different error if no rows are returned
 func (h *MiddlewareHandler) CheckRoomOwnershipBySessionId(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -152,7 +160,7 @@ func (h *MiddlewareHandler) CheckRoomOwnershipBySessionId(next http.Handler) htt
 			return
 		}
 
-		_, err := h.cfg.Queries.CheckRoomOwnershipBySessionId(ctx, sqlc.CheckRoomOwnershipBySessionIdParams{
+		ok, err := h.cfg.Queries.CheckRoomOwnershipBySessionId(ctx, sqlc.CheckRoomOwnershipBySessionIdParams{
 			ID:      sessionId,
 			OwnerID: claims.UserId,
 		})
@@ -160,12 +168,15 @@ func (h *MiddlewareHandler) CheckRoomOwnershipBySessionId(next http.Handler) htt
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must be the owner of this session's room to perform this action")
+			return
+		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-// TODO: update error handling to give a different error if no rows are returned
 func (h *MiddlewareHandler) CheckSessionMembershipOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -182,7 +193,7 @@ func (h *MiddlewareHandler) CheckSessionMembershipOnly(next http.Handler) http.H
 			return
 		}
 
-		_, err := h.cfg.Queries.CheckSessionMembershipOnly(ctx, sqlc.CheckSessionMembershipOnlyParams{
+		ok, err := h.cfg.Queries.CheckSessionMembershipOnly(ctx, sqlc.CheckSessionMembershipOnlyParams{
 			ID:     sessionId,
 			UserID: claims.UserId,
 		})
@@ -190,12 +201,15 @@ func (h *MiddlewareHandler) CheckSessionMembershipOnly(next http.Handler) http.H
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must only be a member of this session to perform this action")
+			return
+		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-// TODO: update error handling to give a different error if no rows are returned
 func (h *MiddlewareHandler) CheckSessionMembership(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -220,6 +234,10 @@ func (h *MiddlewareHandler) CheckSessionMembership(next http.Handler) http.Handl
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
 			return
 		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must be a member of this session to perform this action")
+			return
+		}
 
 		next.ServeHTTP(w, r)
 	})
@@ -233,9 +251,13 @@ func (h *MiddlewareHandler) CheckSessionActive(next http.Handler) http.Handler {
 			return
 		}
 
-		_, err := h.cfg.Queries.CheckSessionActive(r.Context(), sessionId)
+		ok, err := h.cfg.Queries.CheckSessionActive(r.Context(), sessionId)
 		if err != nil {
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "the session must be active to perform this action")
 			return
 		}
 
@@ -257,12 +279,16 @@ func (h *MiddlewareHandler) CheckQuestionBelongsToSession(next http.Handler) htt
 			return
 		}
 
-		_, err := h.cfg.Queries.CheckQuestionBelongsToSession(r.Context(), sqlc.CheckQuestionBelongsToSessionParams{
+		ok, err := h.cfg.Queries.CheckQuestionBelongsToSession(r.Context(), sqlc.CheckQuestionBelongsToSessionParams{
 			ID:        questionId,
 			SessionID: sessionId,
 		})
 		if err != nil {
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "this question does not belong to the provided session")
 			return
 		}
 
@@ -286,12 +312,16 @@ func (h *MiddlewareHandler) CheckCanDeleteQuestion(next http.Handler) http.Handl
 			return
 		}
 
-		_, err := h.cfg.Queries.CheckCanDeleteQuestion(r.Context(), sqlc.CheckCanDeleteQuestionParams{
+		ok, err := h.cfg.Queries.CheckCanDeleteQuestion(r.Context(), sqlc.CheckCanDeleteQuestionParams{
 			ID:     questionId,
 			UserID: claims.UserId,
 		})
 		if err != nil {
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must be the owner of this session or the writer of this question to delete it")
 			return
 		}
 
@@ -309,9 +339,13 @@ func (h *MiddlewareHandler) CheckCanDeleteQuestionLike(next http.Handler) http.H
 			return
 		}
 
-		_, err := h.cfg.Queries.CheckCanDeleteQuestionLike(r.Context(), claims.UserId)
+		ok, err := h.cfg.Queries.CheckCanDeleteQuestionLike(r.Context(), claims.UserId)
 		if err != nil {
 			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must be the user who liked this question to delete it")
 			return
 		}
 

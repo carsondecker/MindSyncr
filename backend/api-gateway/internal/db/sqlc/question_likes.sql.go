@@ -12,16 +12,18 @@ import (
 )
 
 const checkCanDeleteQuestionLike = `-- name: CheckCanDeleteQuestionLike :one
-SELECT 1
-FROM question_likes
-WHERE user_id = $1
+SELECT EXISTS (
+    SELECT 1
+    FROM question_likes
+    WHERE user_id = $1
+)
 `
 
-func (q *Queries) CheckCanDeleteQuestionLike(ctx context.Context, userID uuid.UUID) (int32, error) {
+func (q *Queries) CheckCanDeleteQuestionLike(ctx context.Context, userID uuid.UUID) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkCanDeleteQuestionLike, userID)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const deleteQuestionLike = `-- name: DeleteQuestionLike :one
