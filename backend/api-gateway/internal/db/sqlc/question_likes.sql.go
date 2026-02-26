@@ -11,21 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const checkCanDeleteQuestionLike = `-- name: CheckCanDeleteQuestionLike :one
-SELECT EXISTS (
-    SELECT 1
-    FROM question_likes
-    WHERE user_id = $1
-)
-`
-
-func (q *Queries) CheckCanDeleteQuestionLike(ctx context.Context, userID uuid.UUID) (bool, error) {
-	row := q.db.QueryRowContext(ctx, checkCanDeleteQuestionLike, userID)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
 const deleteQuestionLike = `-- name: DeleteQuestionLike :one
 DELETE FROM question_likes ql
 USING questions q

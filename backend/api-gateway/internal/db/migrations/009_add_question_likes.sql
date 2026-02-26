@@ -7,9 +7,9 @@ CREATE TABLE question_likes (
 );
 
 CREATE UNIQUE INDEX one_question_like_per_user
-ON question_likes (user_id, question_id)
-WHERE is_active = true;
+ON question_likes (user_id, question_id);
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION prevent_self_like()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -25,6 +25,7 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 CREATE TRIGGER trigger_prevent_self_like
 BEFORE INSERT ON question_likes

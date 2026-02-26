@@ -96,6 +96,14 @@ SELECT EXISTS (
         )
 );
 
+-- name: CheckOwnsQuestion :one
+SELECT EXISTS (
+    SELECT 1
+    FROM questions
+    WHERE id = $1
+        AND user_id = $2
+);
+
 -- name: CheckCanDeleteQuestionLike :one
 SELECT EXISTS (
     SELECT 1

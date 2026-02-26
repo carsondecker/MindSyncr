@@ -30,7 +30,12 @@ func (h *QuestionsHandler) HandleCreateQuestion(w http.ResponseWriter, r *http.R
 				return Question{}, sErr
 			}
 
-			return h.createQuestionService(r.Context(), claims.UserId, sessionId, data.Text)
+			res, sErr := h.createQuestionService(r.Context(), claims.UserId, sessionId, data.Text)
+			if sErr != nil {
+				return Question{}, sErr
+			}
+
+			return res, nil
 		},
 	)
 }

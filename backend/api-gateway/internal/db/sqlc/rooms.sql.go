@@ -41,51 +41,6 @@ func (q *Queries) CheckNewJoinCode(ctx context.Context, joinCode string) ([]uuid
 	return items, nil
 }
 
-const checkRoomMembershipByRoomId = `-- name: CheckRoomMembershipByRoomId :one
-SELECT EXISTS (
-    SELECT 1
-    FROM rooms r
-    LEFT JOIN room_memberships rm
-        ON rm.room_id = r.id
-        AND rm.user_id = $2
-    WHERE r.id = $1
-        AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
-)
-`
-
-type CheckRoomMembershipByRoomIdParams struct {
-	ID     uuid.UUID `json:"id"`
-	UserID uuid.UUID `json:"user_id"`
-}
-
-func (q *Queries) CheckRoomMembershipByRoomId(ctx context.Context, arg CheckRoomMembershipByRoomIdParams) (bool, error) {
-	row := q.db.QueryRowContext(ctx, checkRoomMembershipByRoomId, arg.ID, arg.UserID)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
-const checkRoomOwnershipByRoomId = `-- name: CheckRoomOwnershipByRoomId :one
-SELECT EXISTS (
-    SELECT 1
-    FROM rooms
-    WHERE id = $1
-        AND owner_id = $2
-)
-`
-
-type CheckRoomOwnershipByRoomIdParams struct {
-	ID      uuid.UUID `json:"id"`
-	OwnerID uuid.UUID `json:"owner_id"`
-}
-
-func (q *Queries) CheckRoomOwnershipByRoomId(ctx context.Context, arg CheckRoomOwnershipByRoomIdParams) (bool, error) {
-	row := q.db.QueryRowContext(ctx, checkRoomOwnershipByRoomId, arg.ID, arg.OwnerID)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
 const deleteRoom = `-- name: DeleteRoom :exec
 DELETE FROM rooms
 WHERE owner_id = $1

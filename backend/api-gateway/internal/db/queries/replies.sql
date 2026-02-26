@@ -20,6 +20,14 @@ DELETE FROM replies r
 USING questions q
 WHERE r.question_id = q.id
     AND r.user_id = $1
-    AND r.question_id = $2
-    AND r.session_id = $3
-RETURNING ql.id;
+    AND r.id = $2
+    AND q.session_id = $3
+RETURNING r.id;
+
+-- name: UpdateReply :one
+UPDATE replies
+SET text = COALESCE(sqlc.narg(text), text),
+    updated_at = NOW()
+WHERE user_id = $1
+    AND id = $2
+RETURNING id, user_id, question_id, parent_id, text, created_at, updated_at;

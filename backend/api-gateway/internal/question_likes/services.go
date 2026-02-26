@@ -47,9 +47,9 @@ func (h *QuestionLikesHandler) getQuestionLikesService(ctx context.Context, sess
 		}
 	}
 
-	questions := make([]QuestionLike, 0)
+	questionLikes := make([]QuestionLike, 0)
 	for _, row := range rows {
-		questions = append(questions, QuestionLike{
+		questionLikes = append(questionLikes, QuestionLike{
 			Id:         row.ID,
 			UserId:     row.UserID,
 			QuestionId: row.QuestionID,
@@ -57,7 +57,7 @@ func (h *QuestionLikesHandler) getQuestionLikesService(ctx context.Context, sess
 		})
 	}
 
-	return questions, nil
+	return questionLikes, nil
 }
 
 func (h *QuestionLikesHandler) deleteQuestionLikeService(ctx context.Context, sessionId, userId, questionId uuid.UUID) *utils.ServiceError {
