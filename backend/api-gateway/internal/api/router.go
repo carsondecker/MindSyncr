@@ -5,6 +5,7 @@ import (
 
 	"github.com/carsondecker/MindSyncr/internal/auth"
 	comprehensionscores "github.com/carsondecker/MindSyncr/internal/comprehension_scores"
+	questionlikes "github.com/carsondecker/MindSyncr/internal/question_likes"
 	"github.com/carsondecker/MindSyncr/internal/questions"
 	"github.com/carsondecker/MindSyncr/internal/rooms"
 	"github.com/carsondecker/MindSyncr/internal/sessions"
@@ -105,7 +106,49 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 
 	sessionsRouter.Handle("DELETE /{session_id}/questions/{question_id}", sutils.AuthMiddleware(
 		middlewareHandler.CheckSessionMembershipOnly(
-			middlewareHandler.CheckSessionActive(http.HandlerFunc(questionsHandler.HandleDeleteQuestion)),
+			middlewareHandler.CheckSessionActive(
+				middlewareHandler.CheckQuestionBelongsToSession(
+					middlewareHandler.CheckCanDeleteQuestion(
+						http.HandlerFunc(questionsHandler.HandleDeleteQuestion),
+					),
+				),
+			),
+		),
+	))
+
+	questionLikesHandler := questionlikes.NewQuestionLikesHandler(cfg)
+
+	sessionsRouter.Handle("POST /{session_id}/questions/{question_id}/question_likes", sutils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembershipOnly(
+			middlewareHandler.CheckSessionActive(
+				middlewareHandler.CheckQuestionBelongsToSession(
+					middlewareHandler.CheckCanDeleteQuestion(
+						http.HandlerFunc(questionLikesHandler.HandleCreateQuestionLike),
+					),
+				),
+			),
+		),
+	))
+
+	sessionsRouter.Handle("GET /{session_id}/questions/{question_id}/question_likes", sutils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembershipOnly(
+			middlewareHandler.CheckSessionActive(
+				middlewareHandler.CheckQuestionBelongsToSession(
+					http.HandlerFunc(questionLikesHandler.HandleGetQuestionLikes),
+				),
+			),
+		),
+	))
+
+	sessionsRouter.Handle("DELETE /{session_id}/questions/{question_id}/question_likes", sutils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembershipOnly(
+			middlewareHandler.CheckSessionActive(
+				middlewareHandler.CheckQuestionBelongsToSession(
+					middlewareHandler.CheckCanDeleteQuestionLike(
+						http.HandlerFunc(questionLikesHandler.HandleDeleteQuestionLike),
+					),
+				),
+			),
 		),
 	))
 

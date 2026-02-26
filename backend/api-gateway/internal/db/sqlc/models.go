@@ -30,6 +30,13 @@ type Question struct {
 	UpdatedAt  time.Time    `json:"updated_at"`
 }
 
+type QuestionLike struct {
+	ID         uuid.UUID `json:"id"`
+	UserID     uuid.UUID `json:"user_id"`
+	QuestionID uuid.UUID `json:"question_id"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
 type RefreshToken struct {
 	ID        uuid.UUID `json:"id"`
 	UserID    uuid.UUID `json:"user_id"`

@@ -11,6 +11,50 @@ import (
 	"github.com/google/uuid"
 )
 
+const checkCanDeleteQuestion = `-- name: CheckCanDeleteQuestion :one
+SELECT 1
+FROM questions q
+JOIN sessions s
+    ON q.session_id = s.id
+WHERE q.id = $1
+    AND (
+        q.user_id = $2 OR
+        s.owner_id = $2
+    )
+`
+
+type CheckCanDeleteQuestionParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) CheckCanDeleteQuestion(ctx context.Context, arg CheckCanDeleteQuestionParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, checkCanDeleteQuestion, arg.ID, arg.UserID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const checkQuestionBelongsToSession = `-- name: CheckQuestionBelongsToSession :one
+SELECT 1
+FROM questions
+WHERE id = $1
+    AND session_id = $2
+LIMIT 1
+`
+
+type CheckQuestionBelongsToSessionParams struct {
+	ID        uuid.UUID `json:"id"`
+	SessionID uuid.UUID `json:"session_id"`
+}
+
+func (q *Queries) CheckQuestionBelongsToSession(ctx context.Context, arg CheckQuestionBelongsToSessionParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, checkQuestionBelongsToSession, arg.ID, arg.SessionID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const deleteQuestion = `-- name: DeleteQuestion :exec
 DELETE FROM questions
 WHERE user_id = $1

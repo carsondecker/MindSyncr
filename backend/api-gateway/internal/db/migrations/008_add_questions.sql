@@ -1,8 +1,8 @@
 -- +goose Up
 CREATE TABLE questions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id),
-    session_id UUID NOT NULL REFERENCES sessions(id),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
     text TEXT NOT NULL,
     is_answered BOOLEAN NOT NULL DEFAULT FALSE,
     answered_at TIMESTAMPTZ,

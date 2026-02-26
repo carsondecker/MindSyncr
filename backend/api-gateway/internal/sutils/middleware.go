@@ -242,3 +242,79 @@ func (h *MiddlewareHandler) CheckSessionActive(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+func (h *MiddlewareHandler) CheckQuestionBelongsToSession(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
+		if sErr != nil {
+			utils.SError(w, sErr)
+			return
+		}
+
+		questionId, sErr := utils.GetUUIDPathValue(r, "question_id")
+		if sErr != nil {
+			utils.SError(w, sErr)
+			return
+		}
+
+		_, err := h.cfg.Queries.CheckQuestionBelongsToSession(r.Context(), sqlc.CheckQuestionBelongsToSessionParams{
+			ID:        questionId,
+			SessionID: sessionId,
+		})
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *MiddlewareHandler) CheckCanDeleteQuestion(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		raw := ctx.Value(UserContextKey)
+		claims, ok := raw.(*utils.Claims)
+		if !ok || claims == nil {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
+			return
+		}
+
+		questionId, sErr := utils.GetUUIDPathValue(r, "question_id")
+		if sErr != nil {
+			utils.SError(w, sErr)
+			return
+		}
+
+		_, err := h.cfg.Queries.CheckCanDeleteQuestion(r.Context(), sqlc.CheckCanDeleteQuestionParams{
+			ID:     questionId,
+			UserID: claims.UserId,
+		})
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *MiddlewareHandler) CheckCanDeleteQuestionLike(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		raw := ctx.Value(UserContextKey)
+		claims, ok := raw.(*utils.Claims)
+		if !ok || claims == nil {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
+			return
+		}
+
+		_, err := h.cfg.Queries.CheckCanDeleteQuestionLike(r.Context(), claims.UserId)
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
