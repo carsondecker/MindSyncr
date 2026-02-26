@@ -7,6 +7,7 @@ package sqlc
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -32,6 +33,27 @@ type CheckCanDeleteQuestionParams struct {
 
 func (q *Queries) CheckCanDeleteQuestion(ctx context.Context, arg CheckCanDeleteQuestionParams) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkCanDeleteQuestion, arg.ID, arg.UserID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const checkOwnsQuestion = `-- name: CheckOwnsQuestion :one
+SELECT EXISTS (
+    SELECT 1
+    FROM questions
+    WHERE id = $1
+        AND user_id = $2
+)
+`
+
+type CheckOwnsQuestionParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) CheckOwnsQuestion(ctx context.Context, arg CheckOwnsQuestionParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkOwnsQuestion, arg.ID, arg.UserID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -132,6 +154,37 @@ type InsertQuestionParams struct {
 
 func (q *Queries) InsertQuestion(ctx context.Context, arg InsertQuestionParams) (Question, error) {
 	row := q.db.QueryRowContext(ctx, insertQuestion, arg.UserID, arg.SessionID, arg.Text)
+	var i Question
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.SessionID,
+		&i.Text,
+		&i.IsAnswered,
+		&i.AnsweredAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateQuestion = `-- name: UpdateQuestion :one
+UPDATE questions
+SET text = COALESCE($3, text),
+    updated_at = NOW()
+WHERE user_id = $1
+    AND id = $2
+RETURNING id, user_id, session_id, text, is_answered, answered_at, created_at, updated_at
+`
+
+type UpdateQuestionParams struct {
+	UserID uuid.UUID      `json:"user_id"`
+	ID     uuid.UUID      `json:"id"`
+	Text   sql.NullString `json:"text"`
+}
+
+func (q *Queries) UpdateQuestion(ctx context.Context, arg UpdateQuestionParams) (Question, error) {
+	row := q.db.QueryRowContext(ctx, updateQuestion, arg.UserID, arg.ID, arg.Text)
 	var i Question
 	err := row.Scan(
 		&i.ID,

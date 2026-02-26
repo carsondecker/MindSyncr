@@ -116,6 +116,18 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 		),
 	))
 
+	sessionsRouter.Handle("PATCH /{session_id}/questions/{question_id}", sutils.AuthMiddleware(
+		middlewareHandler.CheckSessionMembershipOnly(
+			middlewareHandler.CheckSessionActive(
+				middlewareHandler.CheckQuestionBelongsToSession(
+					middlewareHandler.CheckOwnsQuestion(
+						http.HandlerFunc(questionsHandler.HandleUpdateQuestion),
+					),
+				),
+			),
+		),
+	))
+
 	questionLikesHandler := questionlikes.NewQuestionLikesHandler(cfg)
 
 	sessionsRouter.Handle("POST /{session_id}/questions/{question_id}/question_likes", sutils.AuthMiddleware(
@@ -130,7 +142,7 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 		),
 	))
 
-	sessionsRouter.Handle("GET /{session_id}/questions/{question_id}/question_likes", sutils.AuthMiddleware(
+	sessionsRouter.Handle("GET /{session_id}/question_likes", sutils.AuthMiddleware(
 		middlewareHandler.CheckSessionMembershipOnly(
 			middlewareHandler.CheckSessionActive(
 				middlewareHandler.CheckQuestionBelongsToSession(

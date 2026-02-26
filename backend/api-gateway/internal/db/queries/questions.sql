@@ -18,6 +18,14 @@ WHERE user_id = $1
     AND id = $2
     AND session_id = $3;
 
+-- name: UpdateQuestion :one
+UPDATE questions
+SET text = COALESCE(sqlc.narg(text), text),
+    updated_at = NOW()
+WHERE user_id = $1
+    AND id = $2
+RETURNING id, user_id, session_id, text, is_answered, answered_at, created_at, updated_at;
+
 -- name: CheckQuestionBelongsToSession :one
 SELECT EXISTS (
     SELECT 1
@@ -37,4 +45,12 @@ SELECT EXISTS (
             q.user_id = $2 OR
             s.owner_id = $2
         )
+);
+
+-- name: CheckOwnsQuestion :one
+SELECT EXISTS (
+    SELECT 1
+    FROM questions
+    WHERE id = $1
+        AND user_id = $2
 );

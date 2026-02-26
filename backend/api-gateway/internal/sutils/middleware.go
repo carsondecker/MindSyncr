@@ -352,3 +352,69 @@ func (h *MiddlewareHandler) CheckCanDeleteQuestionLike(next http.Handler) http.H
 		next.ServeHTTP(w, r)
 	})
 }
+
+func (h *MiddlewareHandler) CheckOwnsQuestion(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		raw := ctx.Value(UserContextKey)
+		claims, ok := raw.(*utils.Claims)
+		if !ok || claims == nil {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
+			return
+		}
+
+		questionId, sErr := utils.GetUUIDPathValue(r, "question_id")
+		if sErr != nil {
+			utils.SError(w, sErr)
+			return
+		}
+
+		ok, err := h.cfg.Queries.CheckOwnsQuestion(r.Context(), sqlc.CheckOwnsQuestionParams{
+			ID:     questionId,
+			UserID: claims.UserId,
+		})
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+		if !ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "you must be the owner of this question to perform this action")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (h *MiddlewareHandler) CheckDoesNotQuestion(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		raw := ctx.Value(UserContextKey)
+		claims, ok := raw.(*utils.Claims)
+		if !ok || claims == nil {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrGetUserDataFail, "failed to get user claims from context")
+			return
+		}
+
+		questionId, sErr := utils.GetUUIDPathValue(r, "question_id")
+		if sErr != nil {
+			utils.SError(w, sErr)
+			return
+		}
+
+		ok, err := h.cfg.Queries.CheckOwnsQuestion(r.Context(), sqlc.CheckOwnsQuestionParams{
+			ID:     questionId,
+			UserID: claims.UserId,
+		})
+		if err != nil {
+			utils.Error(w, http.StatusInternalServerError, utils.ErrDbtxFail, err.Error())
+			return
+		}
+		if ok {
+			utils.Error(w, http.StatusUnauthorized, utils.ErrDbtxFail, "the owner of this question cannot perform this action")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}

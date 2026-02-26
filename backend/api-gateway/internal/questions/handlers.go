@@ -77,3 +77,27 @@ func (h *QuestionsHandler) HandleDeleteQuestion(w http.ResponseWriter, r *http.R
 		},
 	)
 }
+
+func (h *QuestionsHandler) HandleUpdateQuestion(w http.ResponseWriter, r *http.Request) {
+	sutils.BaseHandlerFuncWithBodyAndClaims(h, w, r,
+		http.StatusOK,
+		func(data PatchQuestionRequest, claims *utils.Claims) (Question, *utils.ServiceError) {
+			sessionId, sErr := utils.GetUUIDPathValue(r, "session_id")
+			if sErr != nil {
+				return Question{}, sErr
+			}
+
+			questionId, sErr := utils.GetUUIDPathValue(r, "question_id")
+			if sErr != nil {
+				return Question{}, sErr
+			}
+
+			res, sErr := h.updateQuestionService(r.Context(), sessionId, claims.UserId, questionId, data)
+			if sErr != nil {
+				return Question{}, sErr
+			}
+
+			return res, nil
+		},
+	)
+}
