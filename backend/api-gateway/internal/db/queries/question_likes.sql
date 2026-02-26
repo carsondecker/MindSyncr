@@ -21,10 +21,3 @@ WHERE ql.question_id = q.id
     AND ql.question_id = $2
     AND q.session_id = $3
 RETURNING ql.id;
-
--- name: CheckCanDeleteQuestionLike :one
-SELECT EXISTS (
-    SELECT 1
-    FROM question_likes
-    WHERE user_id = $1
-);

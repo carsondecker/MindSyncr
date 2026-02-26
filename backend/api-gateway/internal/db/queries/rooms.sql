@@ -13,25 +13,6 @@ SELECT id
 FROM rooms
 WHERE join_code = $1;
 
--- name: CheckRoomMembershipByRoomId :one
-SELECT EXISTS (
-    SELECT 1
-    FROM rooms r
-    LEFT JOIN room_memberships rm
-        ON rm.room_id = r.id
-        AND rm.user_id = $2
-    WHERE r.id = $1
-        AND (r.owner_id = $2 OR rm.user_id IS NOT NULL)
-);
-
--- name: CheckRoomOwnershipByRoomId :one
-SELECT EXISTS (
-    SELECT 1
-    FROM rooms
-    WHERE id = $1
-        AND owner_id = $2
-);
-
 -- name: GetRoomById :one
 SELECT id, owner_id, name, description, join_code, created_at, updated_at
 FROM rooms
