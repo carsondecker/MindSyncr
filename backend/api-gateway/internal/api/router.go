@@ -86,7 +86,7 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	comprehensionScoresHandler := comprehensionscores.NewComprehensionScoresHandler(cfg)
 
 	sessionsRouter.Handle("POST /{session_id}/comprehension-scores", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(
+		middlewareHandler.CheckRoomMembershipBySessionId(
 			middlewareHandler.CheckSessionActive(http.HandlerFunc(comprehensionScoresHandler.HandleCreateComprehensionScore)),
 		),
 	))
@@ -102,11 +102,11 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 		),
 	))
 	sessionsRouter.Handle("GET /{session_id}/questions", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembership(http.HandlerFunc(questionsHandler.HandleGetQuestions)),
+		middlewareHandler.CheckRoomMembershipBySessionId(http.HandlerFunc(questionsHandler.HandleGetQuestions)),
 	))
 
 	sessionsRouter.Handle("DELETE /{session_id}/questions/{question_id}", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembership(
+		middlewareHandler.CheckRoomMembershipBySessionId(
 			middlewareHandler.CheckSessionActive(
 				middlewareHandler.CheckQuestionBelongsToSession(
 					middlewareHandler.CheckCanDeleteQuestion(
@@ -130,7 +130,7 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	questionLikesHandler := questionlikes.NewQuestionLikesHandler(cfg)
 
 	sessionsRouter.Handle("POST /{session_id}/questions/{question_id}/question_likes", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(
+		middlewareHandler.CheckRoomMembershipBySessionId(
 			middlewareHandler.CheckSessionActive(
 				middlewareHandler.CheckQuestionBelongsToSession(
 					middlewareHandler.CheckDoesNotOwnQuestion(
@@ -142,13 +142,13 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	))
 
 	sessionsRouter.Handle("GET /{session_id}/question_likes", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembership(
+		middlewareHandler.CheckRoomMembershipBySessionId(
 			http.HandlerFunc(questionLikesHandler.HandleGetQuestionLikes),
 		),
 	))
 
 	sessionsRouter.Handle("DELETE /{session_id}/questions/{question_id}/question_likes", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(
+		middlewareHandler.CheckRoomMembershipBySessionId(
 			middlewareHandler.CheckSessionActive(
 				middlewareHandler.CheckQuestionBelongsToSession(
 					middlewareHandler.CheckCanDeleteQuestionLike(
@@ -162,7 +162,7 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	repliesHandler := replies.NewRepliesHandler(cfg)
 
 	sessionsRouter.Handle("POST /{session_id}/questions/{question_id}/replies", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(
+		middlewareHandler.CheckRoomMembershipBySessionId(
 			middlewareHandler.CheckSessionActive(
 				middlewareHandler.CheckQuestionBelongsToSession(
 					http.HandlerFunc(repliesHandler.HandleCreateReply),
@@ -172,13 +172,13 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	))
 
 	sessionsRouter.Handle("GET /{session_id}/replies", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembership(
+		middlewareHandler.CheckRoomMembershipBySessionId(
 			http.HandlerFunc(repliesHandler.HandleGetReplies),
 		),
 	))
 
 	sessionsRouter.Handle("DELETE /{session_id}/replies/{reply_id}", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(
+		middlewareHandler.CheckRoomMembershipBySessionId(
 			middlewareHandler.CheckSessionActive(
 				middlewareHandler.CheckQuestionBelongsToSession(
 					middlewareHandler.CheckCanDeleteReply(
@@ -190,7 +190,7 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	))
 
 	sessionsRouter.Handle("PATCH /{session_id}/replies/{reply_id}", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembershipOnly(
+		middlewareHandler.CheckRoomMembershipBySessionId(
 			middlewareHandler.CheckSessionActive(
 				middlewareHandler.CheckQuestionBelongsToSession(
 					middlewareHandler.CheckOwnsReply(
@@ -207,7 +207,7 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	wsHandler := ws.NewWSHandler(cfg)
 
 	wsRouter.Handle("GET /{session_id}", sutils.AuthMiddleware(
-		middlewareHandler.CheckSessionMembership(
+		middlewareHandler.CheckRoomMembershipBySessionId(
 			middlewareHandler.CheckSessionActive(http.HandlerFunc(wsHandler.HandleGetWSTicket)),
 		),
 	))
