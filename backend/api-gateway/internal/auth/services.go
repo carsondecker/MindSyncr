@@ -5,13 +5,11 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 	"github.com/carsondecker/MindSyncr/utils"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
 
-func (h *AuthHandler) registerService(ctx context.Context, email, username, password string) (UserWithRefresh, string, string, *utils.ServiceError) {
+func (s *AuthService) registerService(ctx context.Context, email, username, password string) (UserWithRefresh, string, string, *utils.ServiceError) {
 	passwordHash, err := hashPassword(password)
 	if err != nil {
 		return UserWithRefresh{}, "", "", &utils.ServiceError{
@@ -21,30 +19,13 @@ func (h *AuthHandler) registerService(ctx context.Context, email, username, pass
 		}
 	}
 
-	row, err := h.cfg.Queries.InsertUser(ctx, sqlc.InsertUserParams{
-		Email:        email,
-		Username:     username,
-		PasswordHash: passwordHash,
-	})
+	user, sErr := s.repo.Register(email, username, passwordHash)
 
-	if err != nil {
-		if pgErr, ok := err.(*pq.Error); ok {
-			if pgErr.Code == "23505" {
-				return UserWithRefresh{}, "", "", &utils.ServiceError{
-					StatusCode: http.StatusBadRequest,
-					Code:       utils.ErrUserAlreadyExists,
-					Message:    "this email is already in use",
-				}
-			}
-		}
-		return UserWithRefresh{}, "", "", &utils.ServiceError{
-			StatusCode: http.StatusBadRequest,
-			Code:       utils.ErrDbtxFail,
-			Message:    err.Error(),
-		}
+	if sErr != nil {
+		return UserWithRefresh{}, "", "", sErr
 	}
 
-	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username, row.Role)
+	jwtToken, err := utils.CreateJWT(user.Id, user.Email, user.Username, user.Role)
 	if err != nil {
 		return UserWithRefresh{}, "", "", &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
@@ -53,48 +34,26 @@ func (h *AuthHandler) registerService(ctx context.Context, email, username, pass
 		}
 	}
 
-	refreshToken, refreshRes, err := createRefreshToken(ctx, h.cfg.Queries, row.ID)
-	if err != nil {
-		return UserWithRefresh{}, "", "", &utils.ServiceError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       utils.ErrRefreshFail,
-			Message:    err.Error(),
-		}
+	refreshToken, refreshRes, sErr := s.createRefreshToken(user.Id)
+	if sErr != nil {
+		return UserWithRefresh{}, "", "", sErr
 	}
 
 	res := UserWithRefresh{
-		Id:              row.ID,
-		Email:           row.Email,
-		Username:        row.Username,
-		Role:            row.Role,
-		Status:          row.Status,
-		IsEmailVerified: row.IsEmailVerified,
-		CreatedAt:       row.CreatedAt,
-		UpdatedAt:       row.UpdatedAt,
-		RefreshToken:    refreshRes,
+		User:         user,
+		RefreshToken: refreshRes,
 	}
 
 	return res, jwtToken, refreshToken, nil
 }
 
-func (h *AuthHandler) loginService(ctx context.Context, email, password string) (UserWithRefresh, string, string, *utils.ServiceError) {
-	row, err := h.cfg.Queries.GetUserForLogin(ctx, email)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return UserWithRefresh{}, "", "", &utils.ServiceError{
-				StatusCode: http.StatusUnauthorized,
-				Code:       utils.ErrInvalidCredentials,
-				Message:    err.Error(),
-			}
-		}
-		return UserWithRefresh{}, "", "", &utils.ServiceError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       utils.ErrDbtxFail,
-			Message:    err.Error(),
-		}
+func (s *AuthService) loginService(ctx context.Context, email, password string) (UserWithRefresh, string, string, *utils.ServiceError) {
+	internalUser, sErr := s.repo.GetInternalUser(email)
+	if sErr != nil {
+		return UserWithRefresh{}, "", "", sErr
 	}
 
-	err = checkPassword(row.PasswordHash, password)
+	err := checkPassword(internalUser.PasswordHash, password)
 	if err != nil {
 		return UserWithRefresh{}, "", "", &utils.ServiceError{
 			StatusCode: http.StatusUnauthorized,
@@ -103,7 +62,7 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 		}
 	}
 
-	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username, row.Role)
+	jwtToken, err := utils.CreateJWT(internalUser.Id, internalUser.Email, internalUser.Username, internalUser.Role)
 	if err != nil {
 		return UserWithRefresh{}, "", "", &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
@@ -112,31 +71,20 @@ func (h *AuthHandler) loginService(ctx context.Context, email, password string) 
 		}
 	}
 
-	refreshToken, refreshRes, err := createRefreshToken(ctx, h.cfg.Queries, row.ID)
-	if err != nil {
-		return UserWithRefresh{}, "", "", &utils.ServiceError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       utils.ErrRefreshFail,
-			Message:    err.Error(),
-		}
+	refreshToken, refreshRes, sErr := s.createRefreshToken(internalUser.Id)
+	if sErr != nil {
+		return UserWithRefresh{}, "", "", sErr
 	}
 
 	res := UserWithRefresh{
-		Id:              row.ID,
-		Email:           row.Email,
-		Username:        row.Username,
-		Role:            row.Role,
-		Status:          row.Status,
-		IsEmailVerified: row.IsEmailVerified,
-		CreatedAt:       row.CreatedAt,
-		UpdatedAt:       row.UpdatedAt,
-		RefreshToken:    refreshRes,
+		User:         internalUser.User,
+		RefreshToken: refreshRes,
 	}
 
 	return res, jwtToken, refreshToken, nil
 }
 
-func (h *AuthHandler) refreshService(ctx context.Context, token string) (string, string, RefreshTokenResponse, *utils.ServiceError) {
+func (h *AuthService) refreshService(ctx context.Context, token string) (string, string, RefreshTokenResponse, *utils.ServiceError) {
 	tx, err := h.cfg.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
@@ -190,7 +138,7 @@ func (h *AuthHandler) refreshService(ctx context.Context, token string) (string,
 	return jwtToken, refreshToken, res, nil
 }
 
-func (h *AuthHandler) logoutService(ctx context.Context, userId uuid.UUID, token string) *utils.ServiceError {
+func (h *AuthService) logoutService(ctx context.Context, userId uuid.UUID, token string) *utils.ServiceError {
 	_, sErr := isValidRefreshToken(ctx, h.cfg.Queries, token)
 	if sErr != nil {
 		return sErr
@@ -208,7 +156,7 @@ func (h *AuthHandler) logoutService(ctx context.Context, userId uuid.UUID, token
 	return nil
 }
 
-func (h *AuthHandler) getUserService(ctx context.Context, userId uuid.UUID) (User, *utils.ServiceError) {
+func (h *AuthService) getUserService(ctx context.Context, userId uuid.UUID) (User, *utils.ServiceError) {
 	row, err := h.cfg.Queries.GetUserById(ctx, userId)
 	if err != nil {
 		if err == sql.ErrNoRows {

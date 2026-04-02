@@ -18,23 +18,6 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
-type UserWithRefresh struct {
-	Id              uuid.UUID            `json:"id"`
-	Email           string               `json:"email"`
-	Username        string               `json:"username"`
-	Role            string               `json:"role"`
-	Status          string               `json:"status"`
-	IsEmailVerified bool                 `json:"is_email_verified"`
-	CreatedAt       time.Time            `json:"created_at"`
-	UpdatedAt       time.Time            `json:"updated_at"`
-	RefreshToken    RefreshTokenResponse `json:"refresh_token"`
-}
-
-type RefreshTokenResponse struct {
-	ExpiresAt time.Time `json:"expires_at"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
 type User struct {
 	Id              uuid.UUID `json:"id"`
 	Email           string    `json:"email"`
@@ -44,4 +27,19 @@ type User struct {
 	IsEmailVerified bool      `json:"is_email_verified"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+type UserWithRefresh struct {
+	User
+	RefreshToken RefreshTokenResponse `json:"refresh_token"`
+}
+
+type RefreshTokenResponse struct {
+	ExpiresAt time.Time `json:"expires_at"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type InternalUser struct {
+	User
+	PasswordHash string
 }

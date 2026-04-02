@@ -7,21 +7,19 @@ import (
 	"github.com/carsondecker/MindSyncr/utils"
 )
 
-type AuthHandler struct {
-	cfg *sutils.Config
+type AuthService struct {
+	repo AuthRepository
 }
 
-func NewAuthHandler(cfg *sutils.Config) *AuthHandler {
-	return &AuthHandler{
-		cfg,
-	}
+func NewAuthService(cfg *sutils.Config) *AuthService {
+	return &AuthService{}
 }
 
-func (h *AuthHandler) GetConfig() *sutils.Config {
+func (h *AuthService) GetConfig() *sutils.Config {
 	return h.cfg
 }
 
-func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
+func (h *AuthService) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFuncWithBody(h, w, r,
 		http.StatusCreated,
 		func(data RegisterRequest) (UserWithRefresh, *utils.ServiceError) {
@@ -56,7 +54,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+func (h *AuthService) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFuncWithBody(h, w, r,
 		http.StatusOK,
 		func(data LoginRequest) (UserWithRefresh, *utils.ServiceError) {
@@ -90,7 +88,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
+func (h *AuthService) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFunc(h, w, r,
 		http.StatusCreated,
 		func() (RefreshTokenResponse, *utils.ServiceError) {
@@ -129,7 +127,7 @@ func (h *AuthHandler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
+func (h *AuthService) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (struct{}, *utils.ServiceError) {
@@ -164,7 +162,7 @@ func (h *AuthHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func (h *AuthHandler) HandleGetUser(w http.ResponseWriter, r *http.Request) {
+func (h *AuthService) HandleGetUser(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (User, *utils.ServiceError) {

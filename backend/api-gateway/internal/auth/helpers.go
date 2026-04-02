@@ -33,11 +33,15 @@ func checkPassword(hashedPassword string, password string) error {
 	return nil
 }
 
-func createRefreshToken(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) (string, RefreshTokenResponse, error) {
+func (s *AuthService) createRefreshToken(userId uuid.UUID) (string, RefreshTokenResponse, *utils.ServiceError) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
 	if err != nil {
-		return "", RefreshTokenResponse{}, fmt.Errorf("failed to generate random token: %w", err)
+		return "", RefreshTokenResponse{}, &utils.ServiceError{
+			StatusCode: http.StatusInternalServerError,
+			Code:       utils.ErrRefreshFail,
+			Message:    fmt.Sprintf("failed to generate random token: %w", err),
+		}
 	}
 
 	token := base64.URLEncoding.EncodeToString(b)
@@ -46,19 +50,12 @@ func createRefreshToken(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) 
 	hashBytes := sha256.Sum256([]byte(token))
 	tokenHash := base64.RawURLEncoding.EncodeToString(hashBytes[:])
 
-	row, err := q.InsertRefreshToken(ctx, sqlc.InsertRefreshTokenParams{
-		UserID:    userId,
-		TokenHash: tokenHash,
-		ExpiresAt: expiresAt,
-	})
-	if err != nil {
-		return "", RefreshTokenResponse{}, fmt.Errorf("failed to create refresh token: %w", err)
+	refreshTokenRes, sErr := s.repo.InsertRefreshToken(userId, tokenHash, expiresAt)
+	if sErr != nil {
+		return "", RefreshTokenResponse{}, sErr
 	}
 
-	return token, RefreshTokenResponse{
-		ExpiresAt: row.ExpiresAt,
-		CreatedAt: row.CreatedAt,
-	}, nil
+	return token, refreshTokenRes, nil
 }
 
 func isValidRefreshToken(ctx context.Context, q *sqlc.Queries, token string) (uuid.UUID, *utils.ServiceError) {
