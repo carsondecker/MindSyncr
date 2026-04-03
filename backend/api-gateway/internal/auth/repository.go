@@ -101,7 +101,7 @@ func (r *PostgresAuthRepository) InsertRefreshToken(userId uuid.UUID, tokenHash 
 		return RefreshTokenResponse{}, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
 			Code:       utils.ErrRefreshFail,
-			Message:    fmt.Sprintf("failed to create refresh token: %w", err),
+			Message:    fmt.Sprintf("failed to create refresh token: %s", err.Error()),
 		}
 	}
 

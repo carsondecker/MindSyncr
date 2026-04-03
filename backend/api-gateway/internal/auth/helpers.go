@@ -37,7 +37,7 @@ func (s *AuthService) createRefreshToken(userId uuid.UUID) (string, RefreshToken
 		return "", RefreshTokenResponse{}, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
 			Code:       utils.ErrRefreshFail,
-			Message:    fmt.Sprintf("failed to generate random token: %w", err),
+			Message:    fmt.Sprintf("failed to generate random token: %s", err.Error()),
 		}
 	}
 
