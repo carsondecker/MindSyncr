@@ -3,13 +3,14 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 )
 
-type SuccessResponse struct {
+type SuccessResponse[Data any] struct {
 	Success bool `json:"success"`
-	Data    any  `json:"data"`
+	Data    Data `json:"data"`
 }
 
 type ErrorResponse struct {
@@ -33,7 +34,7 @@ func WriteSuccess[Data any](w http.ResponseWriter, statusCode int, data Data) er
 		return fmt.Errorf("cannot use success with an error code")
 	}
 
-	res := SuccessResponse{
+	res := SuccessResponse[Data]{
 		Success: true,
 		Data:    data,
 	}
@@ -105,4 +106,19 @@ func SError(w http.ResponseWriter, se *ServiceError) {
 	Error(w, se.StatusCode, se.Code, se.Message)
 }
 
-func MarshalResponse
+func ParseSuccess[Data any](r io.Reader) (SuccessResponse[Data], error) {
+	var res SuccessResponse[Data]
+	if err := json.NewDecoder(r).Decode(&res); err != nil {
+		return SuccessResponse[Data]{}, fmt.Errorf("failed to decode success response: %v", err)
+	}
+
+	return res, nil
+}
+
+func ParseError(r io.Reader) (ErrorResponse, error) {
+	var res ErrorResponse
+	if err := json.NewDecoder(r).Decode(&res); err != nil {
+		return res, fmt.Errorf("failed to decode error response: %w", err)
+	}
+	return res, nil
+}

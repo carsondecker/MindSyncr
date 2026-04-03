@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-type SuccessResponse struct {
+type SuccessResponse[Data any] struct {
 	Success bool `json:"success"`
-	Data    any  `json:"data"`
+	Data    Data `json:"data"`
 }
 
 type ErrorResponse struct {
@@ -33,7 +33,7 @@ func WriteSuccess[Data any](w http.ResponseWriter, statusCode int, data Data) er
 		return fmt.Errorf("cannot use success with an error code")
 	}
 
-	res := SuccessResponse{
+	res := SuccessResponse[Data]{
 		Success: true,
 		Data:    data,
 	}

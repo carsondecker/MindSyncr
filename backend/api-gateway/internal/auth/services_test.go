@@ -1,8 +1,9 @@
 package auth
 
 import (
+	"bytes"
 	"database/sql"
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,7 +13,6 @@ import (
 	"github.com/carsondecker/MindSyncr/internal/sutils"
 	"github.com/carsondecker/MindSyncr/utils"
 	"github.com/google/uuid"
-	"github.com/gopherjs/gopherjs/compiler/natives/src/strings"
 )
 
 var mockDBError = &utils.ServiceError{
@@ -215,17 +215,17 @@ func TestRegister(t *testing.T) {
 				cfg:  sutils.NewConfig(&sql.DB{}, &sqlc.Queries{}, &utils.RedisClient{}),
 			}
 
-			body := strings.NewReader(fmt.Sprintf(`{
-					"email":"%s",
-					"username":"%s",
-					"password":"%s",
-					"confirm_password":"%s",
-				}`,
-				tc.email,
-				tc.username,
-				tc.password,
-				tc.confirmPassword))
-			req := httptest.NewRequest(http.MethodPost, "/", body)
+			body, err := json.Marshal(map[string]string{
+				"email":            tc.email,
+				"username":         tc.username,
+				"password":         tc.password,
+				"confirm_password": tc.confirmPassword,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
 			rr := httptest.NewRecorder()
 
 			s.HandleRegister(rr, req)
@@ -234,46 +234,44 @@ func TestRegister(t *testing.T) {
 				t.Errorf("wrong content type")
 			}
 
-			expected := `{"message":"ok"}`
-			if rr.Body.String() != expected {
-				t.Errorf("expected %s, got %s", expected, rr.Body.String())
-			}
-
-			user, jwtToken, refreshToken, sErr := s.registerService(tc.email, tc.username, tc.password)
-
 			if tc.success {
-				if sErr != nil {
-					t.Fatalf("expected no error, got %s", sErr.Message)
+				if rr.Code >= 400 {
+					res, err := utils.ParseError(rr.Body)
+					if err != nil {
+						t.Fatalf("failed to marshal error response")
+					}
+
+					t.Fatalf("expected no error, got %s", res.Error.Message)
 				}
-				if user.Email != tc.email {
-					t.Errorf("expected email %q, got %q", tc.email, user.Email)
+
+				res, err := utils.ParseSuccess[UserWithRefresh](rr.Body)
+				if err != nil {
+					t.Fatalf("failed to marshal success response")
 				}
-				if user.Username != tc.username {
-					t.Errorf("expected username %q, got %q", tc.username, user.Username)
+
+				if !res.Success {
+					t.Errorf("recieved success response with success as false")
 				}
-				if user.Id == uuid.Nil {
+				if res.Data.Email != tc.email {
+					t.Errorf("expected email %q, got %q", tc.email, res.Data.Email)
+				}
+				if res.Data.Username != tc.username {
+					t.Errorf("expected username %q, got %q", tc.username, res.Data.Username)
+				}
+				if res.Data.Id == uuid.Nil {
 					t.Error("expected non-nil user ID")
 				}
-				if jwtToken == "" {
-					t.Error("expected jwt token")
-				}
-				if refreshToken == "" {
-					t.Error("expected refresh token")
-				}
 			} else {
-				if sErr == nil {
-					t.Fatal("expected error, got nil")
+				if rr.Code < 400 {
+					t.Fatal("expected error, got success code")
 				}
-				emptyUser := UserWithRefresh{}
-				if user != emptyUser {
-					t.Errorf("expected no user, got %v", user)
-				}
-				if jwtToken != "" {
-					t.Errorf("expected no jwt token, got %s", jwtToken)
-				}
-				if refreshToken != "" {
-					t.Errorf("expected no refresh token, got %s", refreshToken)
-				}
+
+				/*
+					res, err := utils.ParseError(rr.Body)
+					if err != nil {
+						t.Fatalf("failed to marshal error response")
+					}
+				*/
 			}
 		})
 	}
