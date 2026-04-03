@@ -2,7 +2,9 @@ package auth
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/carsondecker/MindSyncr/internal/sutils"
 	"github.com/carsondecker/MindSyncr/utils"
 	"github.com/google/uuid"
+	"github.com/gopherjs/gopherjs/compiler/natives/src/strings"
 )
 
 var mockDBError = &utils.ServiceError{
@@ -150,12 +153,13 @@ func (r *MockAuthRepository) GetUserById(userId uuid.UUID) (User, *utils.Service
 // TODO - need to use http tests for most of these things
 func TestRegister(t *testing.T) {
 	tcs := []struct {
-		name     string
-		email    string
-		username string
-		password string
-		success  bool
-		setup    func(*MockAuthRepository)
+		name            string
+		email           string
+		username        string
+		password        string
+		confirmPassword string
+		success         bool
+		setup           func(*MockAuthRepository)
 	}{
 		{
 			name:     "success",
@@ -166,32 +170,35 @@ func TestRegister(t *testing.T) {
 			setup:    nil,
 		},
 		{
-			name:     "fail - duplicate email",
-			email:    "johndoe@example.com",
-			username: "jonathandoe",
-			password: "Iamsoreal123!",
-			success:  false,
+			name:            "fail - duplicate email",
+			email:           "johndoe@example.com",
+			username:        "jonathandoe",
+			password:        "Iamsoreal123!",
+			confirmPassword: "Iamsoreal123!",
+			success:         false,
 			setup: func(r *MockAuthRepository) {
 				r.Register("johndoe@example.com", "testtesttest", "Password123!")
 			},
 		},
 		{
-			name:     "fail - duplicate email, case insensitive",
-			email:    "JohnDoe@example.com",
-			username: "jonathandoe",
-			password: "Iamsoreal123!",
-			success:  false,
+			name:            "fail - duplicate email, case insensitive",
+			email:           "JohnDoe@example.com",
+			username:        "jonathandoe",
+			password:        "Iamsoreal123!",
+			confirmPassword: "Iamsoreal123!",
+			success:         false,
 			setup: func(r *MockAuthRepository) {
 				r.Register("johndoe@example.com", "testtesttest", "Password123!")
 			},
 		},
 		{
-			name:     "fail - username less than min length",
-			email:    "johndoe@example.com",
-			username: "jonathandoe",
-			password: "Iamsoreal123!",
-			success:  false,
-			setup:    nil,
+			name:            "fail - username less than min length",
+			email:           "johndoe@example.com",
+			username:        "jonathandoe",
+			password:        "Iamsoreal123!",
+			confirmPassword: "Iamsoreal123!",
+			success:         false,
+			setup:           nil,
 		},
 	}
 
@@ -206,6 +213,30 @@ func TestRegister(t *testing.T) {
 			s := AuthService{
 				repo: repo,
 				cfg:  sutils.NewConfig(&sql.DB{}, &sqlc.Queries{}, &utils.RedisClient{}),
+			}
+
+			body := strings.NewReader(fmt.Sprintf(`{
+					"email":"%s",
+					"username":"%s",
+					"password":"%s",
+					"confirm_password":"%s",
+				}`,
+				tc.email,
+				tc.username,
+				tc.password,
+				tc.confirmPassword))
+			req := httptest.NewRequest(http.MethodPost, "/", body)
+			rr := httptest.NewRecorder()
+
+			s.HandleRegister(rr, req)
+
+			if rr.Header().Get("Content-Type") != "application/json" {
+				t.Errorf("wrong content type")
+			}
+
+			expected := `{"message":"ok"}`
+			if rr.Body.String() != expected {
+				t.Errorf("expected %s, got %s", expected, rr.Body.String())
 			}
 
 			user, jwtToken, refreshToken, sErr := s.registerService(tc.email, tc.username, tc.password)

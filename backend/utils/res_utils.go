@@ -104,3 +104,5 @@ func Error(w http.ResponseWriter, statusCode int, code string, msg string) {
 func SError(w http.ResponseWriter, se *ServiceError) {
 	Error(w, se.StatusCode, se.Code, se.Message)
 }
+
+func MarshalResponse
