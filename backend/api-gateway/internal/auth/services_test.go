@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
+	"github.com/carsondecker/MindSyncr/internal/sutils"
 	"github.com/carsondecker/MindSyncr/utils"
 	"github.com/google/uuid"
 )
@@ -45,6 +47,16 @@ func (r *MockAuthRepository) Register(email, username, passwordHash string) (Use
 		return User{}, mockDBError
 	}
 
+	for _, internalUser := range r.users {
+		if internalUser.Email == email {
+			return User{}, &utils.ServiceError{
+				StatusCode: http.StatusBadRequest,
+				Code:       utils.ErrUserAlreadyExists,
+				Message:    "this email is already in use",
+			}
+		}
+	}
+
 	uuid, _ := uuid.NewUUID()
 	internalUser := InternalUser{
 		User: User{
@@ -75,7 +87,7 @@ func (r *MockAuthRepository) GetInternalUser(email string) (InternalUser, *utils
 
 	for _, internalUser := range r.users {
 		if internalUser.Email == email {
-			return InternalUser{}, nil
+			return internalUser, nil
 		}
 	}
 
@@ -109,9 +121,9 @@ func (r *MockAuthRepository) RevokeUserTokens(userId uuid.UUID) *utils.ServiceEr
 		return mockDBError
 	}
 
-	for _, refreshToken := range r.refreshTokens {
-		if refreshToken.userId == userId {
-			refreshToken.isRevoked = true
+	for i := range r.refreshTokens {
+		if r.refreshTokens[i].userId == userId {
+			r.refreshTokens[i].isRevoked = true
 		}
 	}
 	return nil
@@ -135,20 +147,103 @@ func (r *MockAuthRepository) GetUserById(userId uuid.UUID) (User, *utils.Service
 	}
 }
 
+// TODO - need to use http tests for most of these things
 func TestRegister(t *testing.T) {
 	tcs := []struct {
-		name string
-		test func(*AuthService, *testing.T)
+		name     string
+		email    string
+		username string
+		password string
+		success  bool
+		setup    func(*MockAuthRepository)
 	}{
 		{
-			name: "success",
-			test: func(t *testing.T) {
-
+			name:     "success",
+			email:    "johndoe@example.com",
+			username: "jonathandoe",
+			password: "Iamsoreal123!",
+			success:  true,
+			setup:    nil,
+		},
+		{
+			name:     "fail - duplicate email",
+			email:    "johndoe@example.com",
+			username: "jonathandoe",
+			password: "Iamsoreal123!",
+			success:  false,
+			setup: func(r *MockAuthRepository) {
+				r.Register("johndoe@example.com", "testtesttest", "Password123!")
 			},
+		},
+		{
+			name:     "fail - duplicate email, case insensitive",
+			email:    "JohnDoe@example.com",
+			username: "jonathandoe",
+			password: "Iamsoreal123!",
+			success:  false,
+			setup: func(r *MockAuthRepository) {
+				r.Register("johndoe@example.com", "testtesttest", "Password123!")
+			},
+		},
+		{
+			name:     "fail - username less than min length",
+			email:    "johndoe@example.com",
+			username: "jonathandoe",
+			password: "Iamsoreal123!",
+			success:  false,
+			setup:    nil,
 		},
 	}
 
-	for _, tc := range tcs {
+	utils.JWTInit("jwtSecret", "wsSecret")
 
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := &MockAuthRepository{}
+			if tc.setup != nil {
+				tc.setup(repo)
+			}
+			s := AuthService{
+				repo: repo,
+				cfg:  sutils.NewConfig(&sql.DB{}, &sqlc.Queries{}, &utils.RedisClient{}),
+			}
+
+			user, jwtToken, refreshToken, sErr := s.registerService(tc.email, tc.username, tc.password)
+
+			if tc.success {
+				if sErr != nil {
+					t.Fatalf("expected no error, got %s", sErr.Message)
+				}
+				if user.Email != tc.email {
+					t.Errorf("expected email %q, got %q", tc.email, user.Email)
+				}
+				if user.Username != tc.username {
+					t.Errorf("expected username %q, got %q", tc.username, user.Username)
+				}
+				if user.Id == uuid.Nil {
+					t.Error("expected non-nil user ID")
+				}
+				if jwtToken == "" {
+					t.Error("expected jwt token")
+				}
+				if refreshToken == "" {
+					t.Error("expected refresh token")
+				}
+			} else {
+				if sErr == nil {
+					t.Fatal("expected error, got nil")
+				}
+				emptyUser := UserWithRefresh{}
+				if user != emptyUser {
+					t.Errorf("expected no user, got %v", user)
+				}
+				if jwtToken != "" {
+					t.Errorf("expected no jwt token, got %s", jwtToken)
+				}
+				if refreshToken != "" {
+					t.Errorf("expected no refresh token, got %s", refreshToken)
+				}
+			}
+		})
 	}
 }
