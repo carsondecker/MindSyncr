@@ -1,15 +1,13 @@
 package auth
 
 import (
-	"context"
-	"database/sql"
 	"net/http"
 
 	"github.com/carsondecker/MindSyncr/utils"
 	"github.com/google/uuid"
 )
 
-func (s *AuthService) registerService(ctx context.Context, email, username, password string) (UserWithRefresh, string, string, *utils.ServiceError) {
+func (s *AuthService) registerService(email, username, password string) (UserWithRefresh, string, string, *utils.ServiceError) {
 	passwordHash, err := hashPassword(password)
 	if err != nil {
 		return UserWithRefresh{}, "", "", &utils.ServiceError{
@@ -47,7 +45,7 @@ func (s *AuthService) registerService(ctx context.Context, email, username, pass
 	return res, jwtToken, refreshToken, nil
 }
 
-func (s *AuthService) loginService(ctx context.Context, email, password string) (UserWithRefresh, string, string, *utils.ServiceError) {
+func (s *AuthService) loginService(email, password string) (UserWithRefresh, string, string, *utils.ServiceError) {
 	internalUser, sErr := s.repo.GetInternalUser(email)
 	if sErr != nil {
 		return UserWithRefresh{}, "", "", sErr
@@ -84,49 +82,41 @@ func (s *AuthService) loginService(ctx context.Context, email, password string) 
 	return res, jwtToken, refreshToken, nil
 }
 
-func (h *AuthService) refreshService(ctx context.Context, token string) (string, string, RefreshTokenResponse, *utils.ServiceError) {
-	tx, err := h.cfg.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       utils.ErrTxBeginFail,
-			Message:    err.Error(),
-		}
+func (s *AuthService) refreshService(token string) (string, string, RefreshTokenResponse, *utils.ServiceError) {
+	tx, sErr := s.repo.BeginTx()
+	if sErr != nil {
+		return "", "", RefreshTokenResponse{}, sErr
 	}
 
 	defer tx.Rollback()
 
-	qtx := h.cfg.Queries.WithTx(tx)
+	txRepo := s.repo.GetTxRepo(tx)
 
-	userId, sErr := isValidRefreshToken(ctx, qtx, token)
+	txAuthService := AuthService{
+		repo: txRepo,
+	}
+
+	userId, sErr := txAuthService.isValidRefreshToken(token)
 	if sErr != nil {
 		return "", "", RefreshTokenResponse{}, sErr
 	}
 
-	err = qtx.RevokeUserTokens(ctx, userId)
-	if err != nil {
-		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       utils.ErrRefreshRevokeFail,
-			Message:    err.Error(),
-		}
-	}
-
-	refreshToken, res, err := createRefreshToken(ctx, qtx, userId)
-	if err != nil {
-		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       utils.ErrRefreshFail,
-			Message:    err.Error(),
-		}
-	}
-
-	jwtToken, sErr := createJWTById(ctx, qtx, userId)
+	sErr = txRepo.RevokeUserTokens(userId)
 	if sErr != nil {
 		return "", "", RefreshTokenResponse{}, sErr
 	}
 
-	err = tx.Commit()
+	refreshToken, res, sErr := s.createRefreshToken(userId)
+	if sErr != nil {
+		return "", "", RefreshTokenResponse{}, sErr
+	}
+
+	jwtToken, sErr := s.createJWTById(userId)
+	if sErr != nil {
+		return "", "", RefreshTokenResponse{}, sErr
+	}
+
+	err := tx.Commit()
 	if err != nil {
 		return "", "", RefreshTokenResponse{}, &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
@@ -138,51 +128,25 @@ func (h *AuthService) refreshService(ctx context.Context, token string) (string,
 	return jwtToken, refreshToken, res, nil
 }
 
-func (h *AuthService) logoutService(ctx context.Context, userId uuid.UUID, token string) *utils.ServiceError {
-	_, sErr := isValidRefreshToken(ctx, h.cfg.Queries, token)
+func (s *AuthService) logoutService(userId uuid.UUID, token string) *utils.ServiceError {
+	_, sErr := s.isValidRefreshToken(token)
 	if sErr != nil {
 		return sErr
 	}
 
-	err := h.cfg.Queries.RevokeUserTokens(ctx, userId)
-	if err != nil {
-		return &utils.ServiceError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       utils.ErrRefreshRevokeFail,
-			Message:    err.Error(),
-		}
+	sErr = s.repo.RevokeUserTokens(userId)
+	if sErr != nil {
+		return sErr
 	}
 
 	return nil
 }
 
-func (h *AuthService) getUserService(ctx context.Context, userId uuid.UUID) (User, *utils.ServiceError) {
-	row, err := h.cfg.Queries.GetUserById(ctx, userId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return User{}, &utils.ServiceError{
-				StatusCode: http.StatusNotFound,
-				Code:       utils.ErrUserNotFound,
-				Message:    err.Error(),
-			}
-		}
-		return User{}, &utils.ServiceError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       utils.ErrDbtxFail,
-			Message:    err.Error(),
-		}
+func (s *AuthService) getUserService(userId uuid.UUID) (User, *utils.ServiceError) {
+	user, sErr := s.repo.GetUserById(userId)
+	if sErr != nil {
+		return User{}, sErr
 	}
 
-	res := User{
-		Id:              row.ID,
-		Email:           row.Email,
-		Username:        row.Username,
-		Role:            row.Role,
-		Status:          row.Status,
-		IsEmailVerified: row.IsEmailVerified,
-		CreatedAt:       row.CreatedAt,
-		UpdatedAt:       row.UpdatedAt,
-	}
-
-	return res, nil
+	return user, nil
 }

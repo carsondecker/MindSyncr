@@ -8,11 +8,15 @@ import (
 )
 
 type AuthService struct {
+	cfg  *sutils.Config
 	repo AuthRepository
 }
 
 func NewAuthService(cfg *sutils.Config) *AuthService {
-	return &AuthService{}
+	return &AuthService{
+		cfg:  cfg,
+		repo: NewPostgresAuthRepository(cfg.DB, cfg.Queries),
+	}
 }
 
 func (h *AuthService) GetConfig() *sutils.Config {
@@ -23,7 +27,7 @@ func (h *AuthService) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFuncWithBody(h, w, r,
 		http.StatusCreated,
 		func(data RegisterRequest) (UserWithRefresh, *utils.ServiceError) {
-			res, jwtToken, refreshToken, sErr := h.registerService(r.Context(), data.Email, data.Username, data.Password)
+			res, jwtToken, refreshToken, sErr := h.registerService(data.Email, data.Username, data.Password)
 			if sErr != nil {
 				return UserWithRefresh{}, sErr
 			}
@@ -58,7 +62,7 @@ func (h *AuthService) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFuncWithBody(h, w, r,
 		http.StatusOK,
 		func(data LoginRequest) (UserWithRefresh, *utils.ServiceError) {
-			res, jwtToken, refreshToken, sErr := h.loginService(r.Context(), data.Email, data.Password)
+			res, jwtToken, refreshToken, sErr := h.loginService(data.Email, data.Password)
 			if sErr != nil {
 				return UserWithRefresh{}, sErr
 			}
@@ -97,7 +101,7 @@ func (h *AuthService) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 				return RefreshTokenResponse{}, sErr
 			}
 
-			jwtToken, newRefreshToken, res, sErr := h.refreshService(r.Context(), refreshToken)
+			jwtToken, newRefreshToken, res, sErr := h.refreshService(refreshToken)
 			if sErr != nil {
 				return RefreshTokenResponse{}, sErr
 			}
@@ -136,7 +140,7 @@ func (h *AuthService) HandleLogout(w http.ResponseWriter, r *http.Request) {
 				return struct{}{}, sErr
 			}
 
-			sErr = h.logoutService(r.Context(), claims.UserId, refreshToken)
+			sErr = h.logoutService(claims.UserId, refreshToken)
 			if sErr != nil {
 				return struct{}{}, sErr
 			}
@@ -166,7 +170,7 @@ func (h *AuthService) HandleGetUser(w http.ResponseWriter, r *http.Request) {
 	sutils.BaseHandlerFuncWithClaims(h, w, r,
 		http.StatusOK,
 		func(claims *utils.Claims) (User, *utils.ServiceError) {
-			res, sErr := h.getUserService(r.Context(), claims.UserId)
+			res, sErr := h.getUserService(claims.UserId)
 			if sErr != nil {
 				return User{}, sErr
 			}

@@ -26,12 +26,12 @@ func GetRouter(cfg *sutils.Config) *http.ServeMux {
 	router.HandleFunc("GET /healthz", healthzHandler)
 
 	authRouter := http.NewServeMux()
-	authHandler := auth.NewAuthHandler(cfg)
-	authRouter.HandleFunc("POST /register", authHandler.HandleRegister)
-	authRouter.HandleFunc("POST /login", authHandler.HandleLogin)
-	authRouter.HandleFunc("POST /refresh", authHandler.HandleRefresh)
-	authRouter.Handle("POST /logout", sutils.AuthMiddleware(http.HandlerFunc(authHandler.HandleLogout)))
-	authRouter.Handle("GET /me", sutils.AuthMiddleware(http.HandlerFunc(authHandler.HandleGetUser)))
+	authService := auth.NewAuthService(cfg)
+	authRouter.HandleFunc("POST /register", authService.HandleRegister)
+	authRouter.HandleFunc("POST /login", authService.HandleLogin)
+	authRouter.HandleFunc("POST /refresh", authService.HandleRefresh)
+	authRouter.Handle("POST /logout", sutils.AuthMiddleware(http.HandlerFunc(authService.HandleLogout)))
+	authRouter.Handle("GET /me", sutils.AuthMiddleware(http.HandlerFunc(authService.HandleGetUser)))
 
 	router.Handle("/auth/", http.StripPrefix("/auth", authRouter))
 

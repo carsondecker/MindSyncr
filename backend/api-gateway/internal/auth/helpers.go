@@ -1,16 +1,13 @@
 package auth
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/carsondecker/MindSyncr/internal/db/sqlc"
 	"github.com/carsondecker/MindSyncr/utils"
 
 	"github.com/google/uuid"
@@ -58,17 +55,13 @@ func (s *AuthService) createRefreshToken(userId uuid.UUID) (string, RefreshToken
 	return token, refreshTokenRes, nil
 }
 
-func isValidRefreshToken(ctx context.Context, q *sqlc.Queries, token string) (uuid.UUID, *utils.ServiceError) {
+func (s *AuthService) isValidRefreshToken(token string) (uuid.UUID, *utils.ServiceError) {
 	hashBytes := sha256.Sum256([]byte(token))
 	tokenHash := base64.RawURLEncoding.EncodeToString(hashBytes[:])
 
-	userId, err := q.CheckValidRefreshToken(ctx, tokenHash)
-	if err != nil {
-		return uuid.Nil, &utils.ServiceError{
-			StatusCode: http.StatusUnauthorized,
-			Code:       utils.ErrInvalidRefreshToken,
-			Message:    err.Error(),
-		}
+	userId, sErr := s.repo.CheckValidRefreshToken(tokenHash)
+	if sErr != nil {
+		return uuid.Nil, sErr
 	}
 
 	if userId == uuid.Nil {
@@ -82,24 +75,13 @@ func isValidRefreshToken(ctx context.Context, q *sqlc.Queries, token string) (uu
 	return userId, nil
 }
 
-func createJWTById(ctx context.Context, q *sqlc.Queries, userId uuid.UUID) (string, *utils.ServiceError) {
-	row, err := q.GetUserById(ctx, userId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", &utils.ServiceError{
-				StatusCode: http.StatusNotFound,
-				Code:       utils.ErrUserNotFound,
-				Message:    err.Error(),
-			}
-		}
-		return "", &utils.ServiceError{
-			StatusCode: http.StatusInternalServerError,
-			Code:       utils.ErrDbtxFail,
-			Message:    err.Error(),
-		}
+func (s *AuthService) createJWTById(userId uuid.UUID) (string, *utils.ServiceError) {
+	user, sErr := s.repo.GetUserById(userId)
+	if sErr != nil {
+		return "", sErr
 	}
 
-	jwtToken, err := utils.CreateJWT(row.ID, row.Email, row.Username, row.Role)
+	jwtToken, err := utils.CreateJWT(user.Id, user.Email, user.Username, user.Role)
 	if err != nil {
 		return "", &utils.ServiceError{
 			StatusCode: http.StatusInternalServerError,
